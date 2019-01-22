@@ -10,6 +10,7 @@
 #define CHARACTERISTIC_UUID "0989bf07-e886-443e-82db-7108726bb650"
 
 #define SERIAL_BAUD 115200
+#define TEMP_HISTORY_LENGTH 10
 
 BME280I2C::Settings settings(
   BME280::OSR_X1,
@@ -23,10 +24,16 @@ BME280I2C::Settings settings(
 );
 
 bool deviceConnected = false;
+float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
 float InternalTemp = 0;
 BME280I2C bme(settings);
 BLECharacteristic *pCharacteristic;
+
+void slideRightBuff(float buff[], uint16_t size){
+  for(int i = size - 1; i >= 0; i--) buff[i] = buff[i - 1];
+  buff[0] = 0;
+}
 
 void getBME280Data(float *buff){
   float temp(NAN), hum(NAN), pres(NAN);
@@ -34,18 +41,33 @@ void getBME280Data(float *buff){
   BME280::PresUnit presUnit(BME280::PresUnit_Pa);
 
   bme.read(pres, temp, hum, tempUnit, presUnit);
-  *(buff) = temp;
-  *(buff + 1) = hum;
-  *(buff + 2) = pres; 
+
+  if(temp != NAN){
+    slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
+    TempHistory[0] = temp;
+
+    *(buff) = temp;
+    *(buff + 1) = hum;
+    *(buff + 2) = pres; 
+  }
 }
 
 String makeResult(){
   String result = "";
+  float tempAve = 0;
+  float tempSum = 0;
+
+  for(int i = 0; i < TEMP_HISTORY_LENGTH; i++) TempHistory[i] != 0 ? tempSum += TempHistory[i] : tempSum;
+  tempAve = tempSum / TEMP_HISTORY_LENGTH;
 
   result += "Temp_Raw: ";
   result += String(EnvBuff[0]);
-  result += "   Temp_Adj: ";
+  result += "   Temp_Ave: ";
+  result += String(tempAve);
+  result += "   Temp_Adj_Simple: ";
   result += String(EnvBuff[0] - (InternalTemp * 0.083));
+  result += "   Temp_Ave_Adj_Simple: ";
+  result += String(tempAve - (InternalTemp * 0.083));
   result += "   Temp_CPU: ";
   result += String(InternalTemp);
   result += "   Humidity: ";
