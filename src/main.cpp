@@ -39,10 +39,16 @@ class MyServerCallbacks: public BLEServerCallbacks {
 String makeResult(){
   String result = "";
   float tempAve = 0;
+  float tempCnt = 0;
   float tempSum = 0;
 
-  for(int i = 0; i < TEMP_HISTORY_LENGTH; i++) TempHistory[i] != 0 ? tempSum += TempHistory[i] : tempSum;
-  tempAve = tempSum / TEMP_HISTORY_LENGTH;
+  for(int i = 0; i < TEMP_HISTORY_LENGTH; i++){
+    if(TempHistory[i] != 0 && TempHistory[i] != NAN){
+      tempSum += TempHistory[i];
+      tempCnt += 1;
+    }
+  }
+  tempAve = tempSum / tempCnt;
 
   result += "Temp_Raw: ";
   result += String(EnvBuff[0]);
