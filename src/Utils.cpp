@@ -175,6 +175,16 @@ String Utils::decodeUrl(String input){
   return result;
 }
 
+void Utils::slideRightBuff(float buff[], uint16_t size){
+  for(int i = size - 1; i >= 0; i--) buff[i] = buff[i - 1];
+  buff[0] = 0;
+}
+
+void Utils::charArrToUint8_tArr(char *str, uint8_t *buff, uint16_t length){
+  for(int i = 0; i < length; i++){
+    *(buff + i) = uint8_t(*(str + i));
+  }
+}
 
 // About StatusGen
 

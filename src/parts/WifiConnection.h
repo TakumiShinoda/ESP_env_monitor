@@ -1,7 +1,7 @@
 #include <WiFi.h>
 #include <Arduino.h>
 
-#define TRY_CONNECT_AP 50
+#define TRY_CONNECT_AP 10
 
 bool connectAP(char *ssid, char *pass){
   uint8_t cnt = 0;

@@ -7,7 +7,8 @@
 #include <WiFi.h>
 
 #include "local_property.h"
-#include "WifiConnection.h"
+#include "parts/Sensors.h"
+#include "parts/WifiConnection.h"
 #include "ServerObject.h"
 
 #define DEVICE_NAME "ENV_Monitor_BLE"
@@ -17,46 +18,23 @@
 #define SERIAL_BAUD 115200
 #define TEMP_HISTORY_LENGTH 10
 
-BME280I2C::Settings settings(
-  BME280::OSR_X1,
-  BME280::OSR_X1,
-  BME280::OSR_X1,
-  BME280::Mode_Forced,
-  BME280::StandbyTime_1000ms,
-  BME280::Filter_Off,
-  BME280::SpiEnable_False,
-  BME280I2C::I2CAddr_0x76
-);
-
+String ResultStr = "";
 bool deviceConnected = false;
 float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
 float InternalTemp = 0;
-BME280I2C bme(settings);
 BLECharacteristic *pCharacteristic;
 ServerObject Server;
 
-void slideRightBuff(float buff[], uint16_t size){
-  for(int i = size - 1; i >= 0; i--) buff[i] = buff[i - 1];
-  buff[0] = 0;
-}
-
-void getBME280Data(float *buff){
-  float temp(NAN), hum(NAN), pres(NAN);
-  BME280::TempUnit tempUnit(BME280::TempUnit_Celsius);
-  BME280::PresUnit presUnit(BME280::PresUnit_Pa);
-
-  bme.read(pres, temp, hum, tempUnit, presUnit);
-
-  if(temp != NAN){
-    slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
-    TempHistory[0] = temp;
-
-    *(buff) = temp;
-    *(buff + 1) = hum;
-    *(buff + 2) = pres; 
+class MyServerCallbacks: public BLEServerCallbacks {
+  void onConnect(BLEServer* pServer) {
+    deviceConnected = true;
   }
-}
+
+  void onDisconnect(BLEServer* pServer) {
+    deviceConnected = false;
+  }
+};
 
 String makeResult(){
   String result = "";
@@ -84,29 +62,17 @@ String makeResult(){
   return result;
 }
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-    }
- 
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-    }
-};
-
-void charArrToUint8_tArr(char *str, uint8_t *buff, uint16_t length){
-  for(int i = 0; i < length; i++){
-    *(buff + i) = uint8_t(*(str + i));
-  }
-}
-
 void homePageCallback(ChainArray params, String *resp, WiFiClient *client){
+  *(resp) = ResultStr;
 }
 
 void setup(){
+  Html homePage("", homePageCallback);
+
   Serial.begin(SERIAL_BAUD);
   delay(500);
 
+  connectAP(SSID, PASS);
   startAP(APSSID, APPASS);
   BLEDevice::init(DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
@@ -121,44 +87,26 @@ void setup(){
   Server.setNotFound("404: Not found.");
   Server.addServer(80);
 
-  Html homePage("aaa", homePageCallback);
-
   Server.setResponse(80, "/", &homePage);
-
   Server.openAllServers();
   
-  Wire.begin();
-  while(!bme.begin()){
-    Serial.println("Could not find BME280I2C sensor!");
-    return;
-  }
-
-  switch(bme.chipModel()){
-    case BME280::ChipModel_BME280:
-      Serial.println("Found BME280 sensor! Success.");
-      break;
-    case BME280::ChipModel_BMP280:
-      Serial.println("Found BMP280 sensor! No Humidity available.");
-      break;
-    default:
-      Serial.println("Found UNKNOWN sensor! Error!");
-  }
-
-  settings.tempOSR = BME280::OSR_X4;
-  bme.setSettings(settings);
+  setupSensors(); 
 }
 
 void loop(){
   InternalTemp = temperatureRead();
   getBME280Data(EnvBuff);
-  String resultStr = makeResult();
   char resultCharBuff[512];
   uint8_t resultUint8Buff[512];
 
-  Serial.println(resultStr);
-  resultStr.toCharArray(resultCharBuff, 512);
-  charArrToUint8_tArr(resultCharBuff, resultUint8Buff, resultStr.length());
-  pCharacteristic->setValue(resultUint8Buff, resultStr.length());
+  utils.slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
+  TempHistory[0] = EnvBuff[0];
+  ResultStr = makeResult();
+
+  Serial.println(ResultStr);
+  ResultStr.toCharArray(resultCharBuff, 512);
+  utils.charArrToUint8_tArr(resultCharBuff, resultUint8Buff, ResultStr.length());
+  pCharacteristic->setValue(resultUint8Buff, ResultStr.length());
   pCharacteristic->notify();
 
   Server.requestHandle(80);

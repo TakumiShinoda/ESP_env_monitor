@@ -29,6 +29,8 @@ class Utils{
     String fixPath(String path);
     bool checkFormat(std::string target, char c, std::vector<bool> rule);
     String decodeUrl(String input);
+    void slideRightBuff(float buff[], uint16_t size);
+    void charArrToUint8_tArr(char *str, uint8_t *buff, uint16_t length);
 };
 
 #endif
