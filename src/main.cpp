@@ -4,6 +4,11 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <WiFi.h>
+
+#include "local_property.h"
+#include "WifiConnection.h"
+#include "ServerObject.h"
 
 #define DEVICE_NAME "ENV_Monitor_BLE"
 #define SERVICE_UUID "81d78b05-4e0a-4644-b364-b79312e4c307"
@@ -29,6 +34,7 @@ float EnvBuff[3] = {0};
 float InternalTemp = 0;
 BME280I2C bme(settings);
 BLECharacteristic *pCharacteristic;
+ServerObject Server;
 
 void slideRightBuff(float buff[], uint16_t size){
   for(int i = size - 1; i >= 0; i--) buff[i] = buff[i - 1];
@@ -88,10 +94,20 @@ class MyServerCallbacks: public BLEServerCallbacks {
     }
 };
 
+void charArrToUint8_tArr(char *str, uint8_t *buff, uint16_t length){
+  for(int i = 0; i < length; i++){
+    *(buff + i) = uint8_t(*(str + i));
+  }
+}
+
+void homePageCallback(ChainArray params, String *resp, WiFiClient *client){
+}
+
 void setup(){
   Serial.begin(SERIAL_BAUD);
   delay(500);
 
+  startAP(APSSID, APPASS);
   BLEDevice::init(DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
@@ -102,6 +118,14 @@ void setup(){
   pService->start();
   pServer->getAdvertising()->start();
 
+  Server.setNotFound("404: Not found.");
+  Server.addServer(80);
+
+  Html homePage("aaa", homePageCallback);
+
+  Server.setResponse(80, "/", &homePage);
+
+  Server.openAllServers();
   
   Wire.begin();
   while(!bme.begin()){
@@ -124,12 +148,6 @@ void setup(){
   bme.setSettings(settings);
 }
 
-void charArrToUint8_tArr(char *str, uint8_t *buff, uint16_t length){
-  for(int i = 0; i < length; i++){
-    *(buff + i) = uint8_t(*(str + i));
-  }
-}
-
 void loop(){
   InternalTemp = temperatureRead();
   getBME280Data(EnvBuff);
@@ -142,6 +160,8 @@ void loop(){
   charArrToUint8_tArr(resultCharBuff, resultUint8Buff, resultStr.length());
   pCharacteristic->setValue(resultUint8Buff, resultStr.length());
   pCharacteristic->notify();
+
+  Server.requestHandle(80);
 
   delay(500);
 }

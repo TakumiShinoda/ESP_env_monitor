@@ -7,3 +7,4 @@
 include
 test
 lib
+local_property.h
