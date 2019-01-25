@@ -10,6 +10,7 @@
 #include "parts/Sensors.h"
 #include "parts/WifiConnection.h"
 #include "ServerObject.h"
+#include "ESPIFFS.h"
 
 #define DEVICE_NAME "ENV_Monitor_BLE"
 #define SERVICE_UUID "81d78b05-4e0a-4644-b364-b79312e4c307"
@@ -28,6 +29,7 @@ float InternalTemp = 0;
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *writeCharacteristic;
 ServerObject Server;
+ESPIFFS espiffs;
 
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
@@ -97,6 +99,15 @@ void setup(){
   Serial.begin(SERIAL_BAUD);
   delay(500);
 
+  if(!espiffs.begin()){
+    Serial.println("ESPIFFS failed.");
+    ESP.restart();
+  }
+
+  if(espiffs.writeFile("/wifi.conf", SSID)){
+    Serial.println(espiffs.readFile("/wifi.conf"));
+  }else Serial.println("failed");
+
   if(connectAP(SSID, PASS)){
     Serial.println("suc");
   }else{
@@ -111,7 +122,6 @@ void setup(){
   pServer->setCallbacks(new MyServerCallbacks());
   pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
   writeCharacteristic = pService->createCharacteristic(WRITE_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
-  // pCharacteristic->addDescriptor(new BLE2902());
   writeCharacteristic->setCallbacks(new WriteCharacteristicCallbacks());
   pService->start();
   pServer->getAdvertising()->start();
