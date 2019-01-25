@@ -15,6 +15,8 @@
 #define SERVICE_UUID "81d78b05-4e0a-4644-b364-b79312e4c307"
 #define CHARACTERISTIC_UUID "0989bf07-e886-443e-82db-7108726bb650"
 
+#define WRITE_CHARACTERISTIC_UUID "0989bf08-e886-443e-82db-7108726bb650"
+
 #define SERIAL_BAUD 115200
 #define TEMP_HISTORY_LENGTH 10
 
@@ -24,6 +26,7 @@ float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
 float InternalTemp = 0;
 BLECharacteristic *pCharacteristic;
+BLECharacteristic *writeCharacteristic;
 ServerObject Server;
 
 class MyServerCallbacks: public BLEServerCallbacks {
@@ -33,6 +36,22 @@ class MyServerCallbacks: public BLEServerCallbacks {
 
   void onDisconnect(BLEServer* pServer) {
     deviceConnected = false;
+  }
+};
+
+class WriteCharacteristicCallbacks: public BLECharacteristicCallbacks{
+  void onWrite(BLECharacteristic *pCharacteristic) {
+    std::string rxValue = pCharacteristic->getValue();
+
+    if(rxValue.length() > 0) {
+      Serial.println("*********");
+      Serial.print("Received Value: ");
+      for (int i = 0; i < rxValue.length(); i++)
+        Serial.print(rxValue[i]);
+
+      Serial.println();
+      Serial.println("*********");
+    }
   }
 };
 
@@ -77,7 +96,7 @@ void setup(){
 
   Serial.begin(SERIAL_BAUD);
   delay(500);
-  
+
   if(connectAP(SSID, PASS)){
     Serial.println("suc");
   }else{
@@ -87,11 +106,13 @@ void setup(){
   startAP(APSSID, APPASS);
   BLEDevice::init(DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
-  pServer->setCallbacks(new MyServerCallbacks());
   BLEService *pService = pServer->createService(SERVICE_UUID);
-  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  pCharacteristic->addDescriptor(new BLE2902());
 
+  pServer->setCallbacks(new MyServerCallbacks());
+  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+  writeCharacteristic = pService->createCharacteristic(WRITE_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+  // pCharacteristic->addDescriptor(new BLE2902());
+  writeCharacteristic->setCallbacks(new WriteCharacteristicCallbacks());
   pService->start();
   pServer->getAdvertising()->start();
 
