@@ -77,8 +77,13 @@ void setup(){
 
   Serial.begin(SERIAL_BAUD);
   delay(500);
+  
+  if(connectAP(SSID, PASS)){
+    Serial.println("suc");
+  }else{
+    Serial.println("faild");
+  }
 
-  connectAP(SSID, PASS);
   startAP(APSSID, APPASS);
   BLEDevice::init(DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
