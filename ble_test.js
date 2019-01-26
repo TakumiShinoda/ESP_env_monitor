@@ -62,11 +62,16 @@ function findService(peripheral, uuids){
 
 function findCharacteristic(services, uuids){
   return new Promise((res, rej) => {
-    services.discoverCharacteristics(uuids, (err, charas) => {
-      if(err) rej(err);
-      else if(charas.length <= 0) rej('No Characteristics');
-      else res(charas);
-    });
+    timeout(5000, (timer_res, timer_rej, timer) => {
+      clearTimeout(timer);
+      services.discoverCharacteristics(uuids, (err, charas) => {
+        if(err) timer_rej(err);
+        else if(charas.length <= 0) timer_rej('No Characteristics');
+        else timer_res(charas);
+      });
+    })
+    .then((charas) => { res(charas) })
+    .catch((err) => { rej(err) });
   });
 }
 
