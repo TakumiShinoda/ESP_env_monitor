@@ -1,3 +1,5 @@
+#include <limits>
+#include <cmath>
 #include "../Utils.h"
 
 #define TRY_BEGIN 10
@@ -48,9 +50,13 @@ void getBME280Data(float *buff){
 
   bme.read(pres, temp, hum, tempUnit, presUnit);
 
-  if(temp != NAN){
+  if(!std::isnan(temp)){
     *(buff) = temp;
     *(buff + 1) = hum;
-    *(buff + 2) = pres; 
+    *(buff + 2) = pres;
+  }else{
+    *(buff) = std::numeric_limits<float>::quiet_NaN();
+    *(buff + 1) = std::numeric_limits<float>::quiet_NaN();
+    *(buff + 2) = std::numeric_limits<float>::quiet_NaN();
   }
 }

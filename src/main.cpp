@@ -11,6 +11,7 @@
 #include "parts/WifiConnection.h"
 #include "ServerObject.h"
 #include "ESPIFFS.h"
+#include <cmath>
 
 #define DEVICE_NAME "ENV_Monitor_BLE"
 #define SERVICE_UUID "81d78b05-4e0a-4644-b364-b79312e4c307"
@@ -63,30 +64,35 @@ String makeResult(){
   float tempCnt = 0;
   float tempSum = 0;
 
-  for(int i = 0; i < TEMP_HISTORY_LENGTH; i++){
-    if(TempHistory[i] != 0 && TempHistory[i] != NAN){
-      tempSum += TempHistory[i];
-      tempCnt += 1;
+  if(!std::isnan(EnvBuff[0]) && !std::isnan(EnvBuff[1]) && !std::isnan(EnvBuff[2])){
+    for(int i = 0; i < TEMP_HISTORY_LENGTH; i++){
+      if(TempHistory[i] != 0 && !std::isnan(TempHistory[i])){
+        Serial.println(TempHistory[i]);
+        tempSum += TempHistory[i];
+        tempCnt += 1;
+      }
     }
+    tempAve = tempSum / tempCnt;
+
+    result += "Temp_Raw: ";
+    result += String(EnvBuff[0]);
+    result += "   Temp_Ave: ";
+    result += String(tempAve);
+    result += "   Temp_Adj_Simple: ";
+    result += String(EnvBuff[0] - (InternalTemp * 0.083));
+    result += "   Temp_Ave_Adj_Simple: ";
+    result += String(tempAve - (InternalTemp * 0.083));
+    result += "   Temp_CPU: ";
+    result += String(InternalTemp);
+    result += "   Humidity: ";
+    result += String(EnvBuff[1]);
+    result += "   Pressure: ";
+    result += String(EnvBuff[2]);
+
+    return result;
+  }else{
+    return "";
   }
-  tempAve = tempSum / tempCnt;
-
-  result += "Temp_Raw: ";
-  result += String(EnvBuff[0]);
-  result += "   Temp_Ave: ";
-  result += String(tempAve);
-  result += "   Temp_Adj_Simple: ";
-  result += String(EnvBuff[0] - (InternalTemp * 0.083));
-  result += "   Temp_Ave_Adj_Simple: ";
-  result += String(tempAve - (InternalTemp * 0.083));
-  result += "   Temp_CPU: ";
-  result += String(InternalTemp);
-  result += "   Humidity: ";
-  result += String(EnvBuff[1]);
-  result += "   Pressure: ";
-  result += String(EnvBuff[2]);
-
-  return result;
 }
 
 void homePageCallback(ChainArray params, String *resp, WiFiClient *client){
@@ -143,7 +149,7 @@ void loop(){
 
   utils.slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
   TempHistory[0] = EnvBuff[0];
-  ResultStr = makeResult();
+  makeResult() != "" ? ResultStr = makeResult() : ResultStr;
 
   Serial.println(ResultStr);
   ResultStr.toCharArray(resultCharBuff, 512);
