@@ -9,3 +9,6 @@ test
 lib
 local_property.h
 data
+
+node_modules
+package-lock.json

@@ -1,0 +1,22 @@
+{
+  "name": "esp_env_monitor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ble_test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TakumiShinoda/ESP_env_monitor.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TakumiShinoda/ESP_env_monitor/issues"
+  },
+  "homepage": "https://github.com/TakumiShinoda/ESP_env_monitor#readme",
+  "dependencies": {
+    "noble-mac": "git://github.com/Timeular/noble-mac"
+  }
+}
