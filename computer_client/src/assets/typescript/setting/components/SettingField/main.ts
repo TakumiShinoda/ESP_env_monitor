@@ -1,5 +1,5 @@
 import Dashboard from './Dashboard'
-import WiFiTab from './WiFI'
+import WiFiTab from './WiFi'
 import BLETab from './BLE'
 import SensorTab from './Sensor'
 
