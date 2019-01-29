@@ -1,4 +1,7 @@
 {
+  "nodeVersion": {
+    "darwin": "11.8.0"
+  },
   "name": "esp_env_monitor",
   "version": "1.0.0",
   "description": "",
