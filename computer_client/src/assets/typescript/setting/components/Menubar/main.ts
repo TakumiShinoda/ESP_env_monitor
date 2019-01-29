@@ -1,4 +1,8 @@
+import Utils from '../../../Utils';
+
 interface MenubarInterface{
+  registerMenuHoverEvent(enter: (ele: any) => void, out: (ele: any) => void): void
+  registerMenuClickEvent(ev: (ele: any, index: number) => void): void
   render(): void
   setEvents(): void
 }
@@ -35,6 +39,9 @@ export default class Menubar implements MenubarInterface{
   private $: JQueryStatic
   private TargetId: string
   private State: number
+  private menuEnterHoverCallback: (ele: any) => void
+  private menuOutHoverCallback: (ele: any) => void 
+  private menuClickCallback: (ele: any, index: number) => void
 
   private static Menues: string[] = ['DashBoard', 'WiFi', 'BLE', 'Sensor']
 
@@ -42,6 +49,9 @@ export default class Menubar implements MenubarInterface{
     this.TargetId = id
     this.$ = _$
     this.State = 0
+    this.menuEnterHoverCallback = (ele: any) => {}
+    this.menuOutHoverCallback = (ele: any) => {}
+    this.menuClickCallback = (ele: any, index: number) => {}
   }
 
   private applyStyle(){
@@ -54,16 +64,27 @@ export default class Menubar implements MenubarInterface{
     $('#menubar li').css(Styles.outFocusMenu)
   }
 
+  registerMenuHoverEvent(enter: (ele: any) => void, out: (ele: any) => void){
+    this.menuEnterHoverCallback = enter
+    this.menuOutHoverCallback = out
+  }
+
+  registerMenuClickEvent(ev: (ele: any, index: number) => void){
+    this.menuClickCallback = ev
+  }
+
   setEvents(){
     this.$('#menubar li').hover(
       (ele: any) => {
         if(parseInt(ele.currentTarget.attributes.name.nodeValue) != this.State){
           ele.currentTarget.style.background = Styles.onFocusMenu.background
+          this.menuEnterHoverCallback(ele)
         }
       },
       (ele: any) => {
         if(parseInt(ele.currentTarget.attributes.name.nodeValue) != this.State){
           ele.currentTarget.style.background = Styles.outFocusMenu.background
+          this.menuOutHoverCallback(ele)
         }
       }
     )
@@ -72,6 +93,7 @@ export default class Menubar implements MenubarInterface{
       this.clearFocus()
       this.State = parseInt(ele.currentTarget.attributes.name.nodeValue)
       ele.currentTarget.style.background = Styles.onFocusMenu.background
+      this.menuClickCallback(ele, this.State)
     })
   }
 
