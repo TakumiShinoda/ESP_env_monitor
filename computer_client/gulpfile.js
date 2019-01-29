@@ -46,7 +46,7 @@ gulp.task('asset_copy', () => {
 });
 
 gulp.task('watcher', () => {
-  new Promise((res) => {
+  return new Promise((res) => {
     gulp.watch('./src/**', gulp.parallel('pug_compile', 'asset_copy', 'make_bundle'));
     gulp.watch('./src/app/main.js', () => {
       electron.restart();

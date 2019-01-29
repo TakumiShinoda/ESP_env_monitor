@@ -1,9 +1,12 @@
+body, html{
+  margin: 0px;
+  padding: 0px;
+}
+
 body{
   -webkit-user-select: none;
   -webkit-app-region: drag;
-  background: rgba(122, 122, 122, 0.95);
-  margin-top: 20px;
-  padding: 10px;
+  background: rgba(122, 122, 122, 1);
 }
 
 .container{
@@ -22,4 +25,9 @@ body{
   background: rgb(255, 255, 255);
   width: 320px;
   height: 200px;
+}
+
+#menubarArea{
+  font-size: 0;
+  background: rgb(30, 30, 30);
 }

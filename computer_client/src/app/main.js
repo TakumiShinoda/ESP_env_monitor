@@ -7,11 +7,8 @@ app.on('ready', () => {
     height: 480,
     resizable: true,
     movable: true,
-    // transparent: true,
-    // titleBarStyle: 'hidden',
-    // frame: false,
   });
-  mainWindow.loadURL('file://' + distPath.views('/index/index.html'));
+  mainWindow.loadURL('file://' + distPath.views('/setting/index.html'));
 
   mainWindow.on('closed', () => {
     mainWindow = null;
