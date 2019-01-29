@@ -97,6 +97,15 @@ export default class Menubar implements MenubarInterface{
     })
   }
 
+  changeFocus(index: number){
+    let menues: JQuery<HTMLElement> = $('#menubar li')
+
+    this.clearFocus()
+    this.State = index
+    console.log(menues)
+    menues[index].style.background = Styles.onFocusMenu.background
+  }
+
   render(){
     let ul: JQuery<HTMLElement> = this.$('<ul id=menubar>')
 
