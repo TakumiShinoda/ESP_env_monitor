@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "outDir": "./src/assets/tsOutput/"
+  },
+  "include": [
+    "./src/assets/typescript/*.ts",
+    "./src/assets/typescript/**/*.ts"
+  ]
+}

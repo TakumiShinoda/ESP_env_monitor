@@ -1,0 +1,25 @@
+body{
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+  background: rgba(122, 122, 122, 0.95);
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.container{
+  margin: 0;
+}
+
+.dragmovable{
+  -webkit-app-region: drag;
+}
+
+.nodragmovable{
+  -webkit-app-region: no-drag;
+}
+
+#webviewExm1{
+  background: rgb(255, 255, 255);
+  width: 320px;
+  height: 200px;
+}

@@ -1,0 +1,23 @@
+{
+  "copyChain": [
+    {
+      "src": "src/assets/javascript/bootstrap/*",
+      "dest": "./dist/js/bootstrap"
+    },
+    {
+      "src": "src/assets/css/index/bootstrap/*",
+      "dest": "./dist/css/bootstrap/"
+    },
+    {
+      "src": "src/assets/typescript/index/webviewResources/webviewExm1/didFinishLoad.js",
+      "dest": "./dist/js/index/webviewResources/webviewExm1/"
+    },
+    {
+      "src": "src/assets/typescript/index/webviewResources/webviewExm1/domReady.js",
+      "dest": "./dist/js/index/webviewResources/webviewExm1/"
+    }
+  ],
+  "routes": [
+    "index"
+  ]
+}
