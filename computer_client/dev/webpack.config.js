@@ -1,3 +1,4 @@
+const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
 const {srcPath, distPath} = require('./path');
 
 module.exports = {
@@ -8,6 +9,9 @@ module.exports = {
       output: {
         filename: routes + ".js"
       },
+      plugins: [
+        new HardSourceWebpackPlugin()
+      ],    
       module: {
         rules: [
           {

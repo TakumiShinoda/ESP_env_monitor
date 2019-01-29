@@ -20,6 +20,7 @@
   "devDependencies": {
     "@types/jquery": "^3.3.14",
     "css-loader": "^1.0.0",
+    "debug": "^3.1.0",
     "electron": "^4.0.2",
     "electron-connect": "^0.6.3",
     "electron-packager": "^12.2.0",
@@ -28,6 +29,7 @@
     "gulp": "^4.0.0",
     "gulp-plumber": "^1.2.0",
     "gulp-pug": "^3.3.0",
+    "hard-source-webpack-plugin": "^0.13.1",
     "style-loader": "^0.23.1",
     "ts-loader": "^5.2.1",
     "typescript": "^3.1.2",
