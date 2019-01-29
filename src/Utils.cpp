@@ -71,6 +71,24 @@ String Utils::split(String target, char sep, uint8_t index){
   return result;
 }
 
+std::vector<String> Utils::split2vector(String target, char sep){
+  String buff = "";
+  std::vector<String> result;
+  
+  for(int i = 0; i < target.length(); i++){
+    if(target[i] == sep){
+      result.push_back(buff);
+      buff = "";
+    }else if(i == target.length() - 1){
+      buff += target[i];
+      result.push_back(buff);
+    }
+    else buff += target[i];
+  }
+
+  return result;
+}
+
 std::vector<uint8_t> Utils::vector_find(std::vector<String> target, String str){
   std::vector<uint8_t> result;
 
@@ -184,6 +202,13 @@ void Utils::charArrToUint8_tArr(char *str, uint8_t *buff, uint16_t length){
   for(int i = 0; i < length; i++){
     *(buff + i) = uint8_t(*(str + i));
   }
+}
+
+String Utils::stdString2String(std::string str){
+  String result = "";
+
+  for(int i = 0; i < str.length(); i++) result += str[i];
+  return result;
 }
 
 // About StatusGen

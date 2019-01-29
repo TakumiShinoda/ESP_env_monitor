@@ -10,6 +10,7 @@ class ESPIFFS{
     bool begin();
     String readFile(String path);
     bool writeFile(String path, String value);
+    bool appendFile(String path, String value);
     void removeFile(String path);
 
   private:

@@ -17,7 +17,7 @@
 #define SERVICE_UUID "81d78b05-4e0a-4644-b364-b79312e4c307"
 #define CHARACTERISTIC_UUID "0989bf07-e886-443e-82db-7108726bb650"
 
-#define WRITE_CHARACTERISTIC_UUID "0989bf08-e886-443e-82db-7108726bb650"
+#define WIFI_CONFIG_POST_CHARACTERISTIC_UUID "0989bf08-e886-443e-82db-7108726bb650"
 
 #define SERIAL_BAUD 115200
 #define TEMP_HISTORY_LENGTH 10
@@ -28,7 +28,7 @@ float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
 float InternalTemp = 0;
 BLECharacteristic *pCharacteristic;
-BLECharacteristic *writeCharacteristic;
+BLECharacteristic *wifiConfigPostCharacteristic;
 ServerObject Server;
 ESPIFFS espiffs;
 
@@ -42,19 +42,31 @@ class MyServerCallbacks: public BLEServerCallbacks {
   }
 };
 
-class WriteCharacteristicCallbacks: public BLECharacteristicCallbacks{
+class WifiConfigPostCharacteristicCallbacks: public BLECharacteristicCallbacks{
   void onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
+    String rxString = utils.stdString2String(rxValue);
+    rxString.replace("\n", "");
+    std::vector<String> rxSplit = utils.split2vector(rxString, ',');
+    String wifiConfigData = espiffs.readFile("/wifi.conf");  
+    std::vector<String> wifiConfigSplit = utils.split2vector(wifiConfigData, '\n');
+    String result = "";
+    Serial.println(wifiConfigData);
 
-    if(rxValue.length() > 0) {
-      Serial.println("*********");
-      Serial.print("Received Value: ");
-      for (int i = 0; i < rxValue.length(); i++)
-        Serial.print(rxValue[i]);
-
-      Serial.println();
-      Serial.println("*********");
+    if(rxSplit.size() == 2){
+      wifiConfigSplit.push_back(rxString);
     }
+    for(int i = 0; i < wifiConfigSplit.size(); i++){
+      if(wifiConfigSplit[i] != ""){
+        result += wifiConfigSplit[i] + "\n";
+      }
+    }
+    if(!espiffs.writeFile("/wifi.conf", result)) Serial.println("Write failed.");
+    else{
+      Serial.println("Result: ");
+      Serial.println(result);
+    }
+    Serial.println(espiffs.readFile("/wifi.conf"));
   }
 };
 
@@ -67,7 +79,6 @@ String makeResult(){
   if(!std::isnan(EnvBuff[0]) && !std::isnan(EnvBuff[1]) && !std::isnan(EnvBuff[2])){
     for(int i = 0; i < TEMP_HISTORY_LENGTH; i++){
       if(TempHistory[i] != 0 && !std::isnan(TempHistory[i])){
-        Serial.println(TempHistory[i]);
         tempSum += TempHistory[i];
         tempCnt += 1;
       }
@@ -110,15 +121,11 @@ void setup(){
     ESP.restart();
   }
 
-  if(espiffs.writeFile("/wifi.conf", SSID)){
-    Serial.println(espiffs.readFile("/wifi.conf"));
-  }else Serial.println("failed");
-
-  if(connectAP(SSID, PASS)){
-    Serial.println("suc");
-  }else{
-    Serial.println("faild");
-  }
+  // if(connectAP(SSID, PASS)){
+  //   Serial.println("suc");
+  // }else{
+  //   Serial.println("faild");
+  // }
 
   startAP(APSSID, APPASS);
   BLEDevice::init(DEVICE_NAME);
@@ -127,8 +134,8 @@ void setup(){
 
   pServer->setCallbacks(new MyServerCallbacks());
   pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  writeCharacteristic = pService->createCharacteristic(WRITE_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
-  writeCharacteristic->setCallbacks(new WriteCharacteristicCallbacks());
+  wifiConfigPostCharacteristic = pService->createCharacteristic(WIFI_CONFIG_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+  wifiConfigPostCharacteristic->setCallbacks(new WifiConfigPostCharacteristicCallbacks());
   pService->start();
   pServer->getAdvertising()->start();
 
@@ -151,7 +158,7 @@ void loop(){
   TempHistory[0] = EnvBuff[0];
   makeResult() != "" ? ResultStr = makeResult() : ResultStr;
 
-  Serial.println(ResultStr);
+  // Serial.println(ResultStr);
   ResultStr.toCharArray(resultCharBuff, 512);
   utils.charArrToUint8_tArr(resultCharBuff, resultUint8Buff, ResultStr.length());
   pCharacteristic->setValue(resultUint8Buff, ResultStr.length());

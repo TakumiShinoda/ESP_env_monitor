@@ -18,6 +18,7 @@ String ESPIFFS::readFile(String path){
     result += char(file.read());
   }
 
+  file.close();
   return result;
 }
 
@@ -28,6 +29,19 @@ bool ESPIFFS::writeFile(String path, String value){
 
   if(!file) return false;
   if(file.print(value)) return true;
+  else return false;
+}
+
+bool ESPIFFS::appendFile(String path, String value){
+  if(!SPIFFSIni) return false;
+
+  File file = SPIFFS.open(path, FILE_APPEND);
+
+  if(!file) return false;
+  if(file.print(value)){
+    file.close();
+    return true;
+  }
   else return false;
 }
 
