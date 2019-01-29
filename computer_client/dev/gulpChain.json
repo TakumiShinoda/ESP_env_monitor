@@ -1,0 +1,15 @@
+{
+  "copyChain": [
+    {
+      "src": "src/assets/javascript/bootstrap/*",
+      "dest": "./dist/js/bootstrap"
+    },
+    {
+      "src": "src/assets/css/bootstrap/*",
+      "dest": "./dist/css/bootstrap/"
+    }
+  ],
+  "routes": [
+    "setting"
+  ]
+}
