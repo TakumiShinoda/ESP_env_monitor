@@ -16,11 +16,16 @@
 #define DEVICE_NAME "ENV_Monitor_BLE"
 #define SERVICE_UUID "81d78b05-4e0a-4644-b364-b79312e4c307"
 #define CHARACTERISTIC_UUID "0989bf07-e886-443e-82db-7108726bb650"
-
 #define WIFI_CONFIG_POST_CHARACTERISTIC_UUID "0989bf08-e886-443e-82db-7108726bb650"
+#define WiFI_STATUS_CHARACTERISTIC_UUID "0989bf09-e886-443e-82db-7108726bb650"
 
 #define SERIAL_BAUD 115200
 #define TEMP_HISTORY_LENGTH 10
+
+char WIFI_STATUS_STATEMENT_CONNECTING[] = "true";
+uint8_t WIFI_STATUS_STATEMENT_CONNECTING_LENGTH = 4;
+char WIFI_STATUS_STATEMENT_NOTCONNECTING[] = "false";
+uint8_t WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH = 5;
 
 String ResultStr = "";
 bool deviceConnected = false;
@@ -29,6 +34,7 @@ float EnvBuff[3] = {0};
 float InternalTemp = 0;
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *wifiConfigPostCharacteristic;
+BLECharacteristic *wifiStatusCharacteristic;
 ServerObject Server;
 ESPIFFS espiffs;
 
@@ -133,9 +139,16 @@ void setup(){
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
   pServer->setCallbacks(new MyServerCallbacks());
+
+  // create BLE characteristic
   pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+  wifiStatusCharacteristic = pService->createCharacteristic(WiFI_STATUS_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
   wifiConfigPostCharacteristic = pService->createCharacteristic(WIFI_CONFIG_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+
+  // set BLE characteristic callbacks
   wifiConfigPostCharacteristic->setCallbacks(new WifiConfigPostCharacteristicCallbacks());
+
+  // BLE server open
   pService->start();
   pServer->getAdvertising()->start();
 
@@ -153,6 +166,7 @@ void loop(){
   getBME280Data(EnvBuff);
   char resultCharBuff[512];
   uint8_t resultUint8Buff[512];
+  uint8_t wifiStatusResult[8];
 
   utils.slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
   TempHistory[0] = EnvBuff[0];
@@ -161,6 +175,15 @@ void loop(){
   // Serial.println(ResultStr);
   ResultStr.toCharArray(resultCharBuff, 512);
   utils.charArrToUint8_tArr(resultCharBuff, resultUint8Buff, ResultStr.length());
+
+  if(WiFi.status() == WL_CONNECTED){
+    utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_CONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_CONNECTING_LENGTH);
+    wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_CONNECTING_LENGTH);
+  }else{
+    utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_NOTCONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
+    wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
+  }
+
   pCharacteristic->setValue(resultUint8Buff, ResultStr.length());
   pCharacteristic->notify();
 

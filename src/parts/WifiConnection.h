@@ -1,7 +1,8 @@
 #include <WiFi.h>
 #include <Arduino.h>
 
-#define TRY_CONNECT_AP 10
+#define FREQ_CONNECT_AP 500 // ms
+#define TRY_CONNECT_AP 10 // times
 
 bool checkNetwork(char *_ssid){
   bool result = false;
@@ -30,7 +31,7 @@ bool connectAP(char *ssid, char *pass){
   }
   WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED && cnt < TRY_CONNECT_AP){
-    delay(500);
+    delay(FREQ_CONNECT_AP);
     Serial.print(".");
     cnt += 1;
   }
