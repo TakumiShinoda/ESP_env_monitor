@@ -19,5 +19,5 @@ $(document).ready(() => {
   })
 
   menubar.render()
-  openSetting(0)
+  openSetting(1)
 })
