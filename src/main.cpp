@@ -18,7 +18,9 @@
 #define CHARACTERISTIC_UUID "0989bf07-e886-443e-82db-7108726bb650"
 #define WIFI_CONFIG_POST_CHARACTERISTIC_UUID "0989bf08-e886-443e-82db-7108726bb650"
 #define WiFI_STATUS_CHARACTERISTIC_UUID "0989bf09-e886-443e-82db-7108726bb650"
-
+#define WIFI_AP_CONNECT_CHARACTERISTIC_UUID "0989bf10-e886-443e-82db-7108726bb650"
+#define WIFI_AP_DISCONNECT_CHARACTERISTIC_UUID "0989bf11-e886-443e-82db-7108726bb650"
+ 
 #define SERIAL_BAUD 115200
 #define TEMP_HISTORY_LENGTH 10
 
@@ -35,6 +37,8 @@ float InternalTemp = 0;
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *wifiConfigPostCharacteristic;
 BLECharacteristic *wifiStatusCharacteristic;
+BLECharacteristic *wifiAPConnectCharacteristic;
+BLECharacteristic *wifiAPDisconnectCharacteristic;
 ServerObject Server;
 ESPIFFS espiffs;
 
@@ -45,6 +49,24 @@ class MyServerCallbacks: public BLEServerCallbacks {
 
   void onDisconnect(BLEServer* pServer) {
     deviceConnected = false;
+  }
+};
+
+class WifiAPConnectCharacteristicCallbacks: public BLECharacteristicCallbacks{
+  void onWrite(BLECharacteristic *chara){
+    std::string rxVal = chara->getValue();
+    String rxString = utils.stdString2String(rxVal);
+
+    if(rxString == "aaaa") connectAP(SSID, PASS);
+  }
+};
+
+class WifiAPDisconnectCharacteristicCallbacks: public BLECharacteristicCallbacks{
+  void onWrite(BLECharacteristic *chara){
+    std::string rxVal = chara->getValue();
+    String rxString = utils.stdString2String(rxVal);
+
+    if(rxString == "aaaa") WiFi.disconnect();
   }
 };
 
@@ -127,6 +149,7 @@ void setup(){
     ESP.restart();
   }
 
+  WiFi.disconnect();
   // if(connectAP(SSID, PASS)){
   //   Serial.println("suc");
   // }else{
@@ -144,14 +167,19 @@ void setup(){
   pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
   wifiStatusCharacteristic = pService->createCharacteristic(WiFI_STATUS_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
   wifiConfigPostCharacteristic = pService->createCharacteristic(WIFI_CONFIG_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+  wifiAPConnectCharacteristic = pService->createCharacteristic(WIFI_AP_CONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+  wifiAPDisconnectCharacteristic = pService->createCharacteristic(WIFI_AP_DISCONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
 
   // set BLE characteristic callbacks
   wifiConfigPostCharacteristic->setCallbacks(new WifiConfigPostCharacteristicCallbacks());
+  wifiAPConnectCharacteristic->setCallbacks(new WifiAPConnectCharacteristicCallbacks());
+  wifiAPDisconnectCharacteristic->setCallbacks(new WifiAPDisconnectCharacteristicCallbacks());
 
   // BLE server open
   pService->start();
   pServer->getAdvertising()->start();
 
+  // setting Wifi server
   Server.setNotFound("404: Not found.");
   Server.addServer(80);
 
