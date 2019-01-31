@@ -4,6 +4,17 @@
 #define FREQ_CONNECT_AP 500 // ms
 #define TRY_CONNECT_AP 10 // times
 
+std::vector<String> getAroundSSIDs(){
+  std::vector<String> result;
+  uint16_t ssids = WiFi.scanNetworks();
+
+  for(int i = 0; i < ssids; i++){
+    result.push_back(WiFi.SSID(i));
+    Serial.println(WiFi.SSID(i));
+  }
+  return result;
+}
+
 bool checkNetwork(char *_ssid){
   bool result = false;
   uint16_t nets = WiFi.scanNetworks();
