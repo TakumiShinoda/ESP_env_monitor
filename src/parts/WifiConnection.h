@@ -10,7 +10,6 @@ std::vector<String> getAroundSSIDs(){
 
   for(int i = 0; i < ssids; i++){
     result.push_back(WiFi.SSID(i));
-    Serial.println(WiFi.SSID(i));
   }
   return result;
 }

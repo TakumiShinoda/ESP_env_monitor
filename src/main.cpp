@@ -5,13 +5,14 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <WiFi.h>
+#include <cmath>
+#include <iostream>
 
 #include "local_property.h"
 #include "parts/Sensors.h"
 #include "parts/WifiConnection.h"
 #include "ServerObject.h"
 #include "ESPIFFS.h"
-#include <cmath>
 
 #define DEVICE_NAME "ENV_Monitor_BLE"
 #define SERVICE_UUID "81d78b05-4e0a-4644-b364-b79312e4c307"
@@ -54,10 +55,31 @@ class MyServerCallbacks: public BLEServerCallbacks {
 
 class WifiAPConnectCharacteristicCallbacks: public BLECharacteristicCallbacks{
   void onWrite(BLECharacteristic *chara){
+    std::vector<String> aroundSSIDs = getAroundSSIDs();
     std::string rxVal = chara->getValue();
     String rxString = utils.stdString2String(rxVal);
+    String savedWificonfs = espiffs.readFile("/wifi.conf");
+    std::vector<String> splitSavedWificonfs = utils.split2vector(savedWificonfs, '\n');
 
-    if(rxString == "aaaa") connectAP(SSID, PASS);
+    for(String aroundSSID : aroundSSIDs){
+      for(String savedWificonf : splitSavedWificonfs){
+        String savedSSID = utils.split(savedWificonf, ',', 0);
+
+        if(aroundSSID == savedSSID){
+          String savedPASS = utils.split(savedWificonf, ',', 1);
+          char ssidBuff[255];
+          char passBuff[255];
+
+          // Serial.println(savedSSID);
+          savedSSID.toCharArray(ssidBuff, savedSSID.length() + 1);
+          savedPASS.toCharArray(passBuff, savedPASS.length() + 1);
+          if(connectAP(ssidBuff, passBuff)) Serial.println("WiFi Connected");
+          else Serial.println("WiFi Connection failed");
+          break;
+        }
+      }
+      if(WiFi.status() == WL_CONNECTED) break;
+    }
   }
 };
 
