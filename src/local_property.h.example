@@ -1,0 +1,8 @@
+#define WIFI_CONF_DIR  "/wifi.conf"
+#define BLE_WIFI_CONNECT_PERMMISION "aaaa"
+#define BLE_WIFI_DISCONNECT_PERMMISION "aaaa"
+
+char APSSID[] = "ESP_env_monitor";
+char APPASS[] = "********"; 
+char SSID[] = "****";
+char PASS[] = "********";

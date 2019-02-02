@@ -58,27 +58,28 @@ class WifiAPConnectCharacteristicCallbacks: public BLECharacteristicCallbacks{
     std::vector<String> aroundSSIDs = getAroundSSIDs();
     std::string rxVal = chara->getValue();
     String rxString = utils.stdString2String(rxVal);
-    String savedWificonfs = espiffs.readFile("/wifi.conf");
+    String savedWificonfs = espiffs.readFile(WIFI_CONF_DIR);
     std::vector<String> splitSavedWificonfs = utils.split2vector(savedWificonfs, '\n');
 
-    for(String aroundSSID : aroundSSIDs){
-      for(String savedWificonf : splitSavedWificonfs){
-        String savedSSID = utils.split(savedWificonf, ',', 0);
+    if(rxVal == BLE_WIFI_CONNECT_PERMMISION){
+      for(String aroundSSID : aroundSSIDs){
+        for(String savedWificonf : splitSavedWificonfs){
+          String savedSSID = utils.split(savedWificonf, ',', 0);
 
-        if(aroundSSID == savedSSID){
-          String savedPASS = utils.split(savedWificonf, ',', 1);
-          char ssidBuff[255];
-          char passBuff[255];
+          if(aroundSSID == savedSSID){
+            String savedPASS = utils.split(savedWificonf, ',', 1);
+            char ssidBuff[255];
+            char passBuff[255];
 
-          // Serial.println(savedSSID);
-          savedSSID.toCharArray(ssidBuff, savedSSID.length() + 1);
-          savedPASS.toCharArray(passBuff, savedPASS.length() + 1);
-          if(connectAP(ssidBuff, passBuff)) Serial.println("WiFi Connected");
-          else Serial.println("WiFi Connection failed");
-          break;
+            savedSSID.toCharArray(ssidBuff, savedSSID.length() + 1);
+            savedPASS.toCharArray(passBuff, savedPASS.length() + 1);
+            if(connectAP(ssidBuff, passBuff)) Serial.println("WiFi Connected");
+            else Serial.println("WiFi Connection failed");
+            break;
+          }
         }
+        if(WiFi.status() == WL_CONNECTED) break;
       }
-      if(WiFi.status() == WL_CONNECTED) break;
     }
   }
 };
@@ -88,7 +89,7 @@ class WifiAPDisconnectCharacteristicCallbacks: public BLECharacteristicCallbacks
     std::string rxVal = chara->getValue();
     String rxString = utils.stdString2String(rxVal);
 
-    if(rxString == "aaaa") WiFi.disconnect();
+    if(rxString == BLE_WIFI_DISCONNECT_PERMMISION) WiFi.disconnect();
   }
 };
 
@@ -98,10 +99,9 @@ class WifiConfigPostCharacteristicCallbacks: public BLECharacteristicCallbacks{
     String rxString = utils.stdString2String(rxValue);
     rxString.replace("\n", "");
     std::vector<String> rxSplit = utils.split2vector(rxString, ',');
-    String wifiConfigData = espiffs.readFile("/wifi.conf");  
+    String wifiConfigData = espiffs.readFile(WIFI_CONF_DIR);  
     std::vector<String> wifiConfigSplit = utils.split2vector(wifiConfigData, '\n');
     String result = "";
-    Serial.println(wifiConfigData);
 
     if(rxSplit.size() == 2){
       wifiConfigSplit.push_back(rxString);
@@ -111,12 +111,8 @@ class WifiConfigPostCharacteristicCallbacks: public BLECharacteristicCallbacks{
         result += wifiConfigSplit[i] + "\n";
       }
     }
-    if(!espiffs.writeFile("/wifi.conf", result)) Serial.println("Write failed.");
-    else{
-      Serial.println("Result: ");
-      Serial.println(result);
-    }
-    Serial.println(espiffs.readFile("/wifi.conf"));
+    if(!espiffs.writeFile(WIFI_CONF_DIR, result)) Serial.println("Write failed.");
+    Serial.println(espiffs.readFile(WIFI_CONF_DIR));
   }
 };
 
@@ -172,12 +168,6 @@ void setup(){
   }
 
   WiFi.disconnect();
-  // if(connectAP(SSID, PASS)){
-  //   Serial.println("suc");
-  // }else{
-  //   Serial.println("faild");
-  // }
-
   startAP(APSSID, APPASS);
   BLEDevice::init(DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
