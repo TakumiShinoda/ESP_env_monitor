@@ -10,6 +10,9 @@
 #define WIFI_AP_CONNECT_CHARACTERISTIC_UUID "********-****-****-****-************"
 #define WIFI_AP_DISCONNECT_CHARACTERISTIC_UUID "********-****-****-****-************"
 
+#define DEBUG_SERVICEUUID "********-****-****-****-************"
+#define GET_WIFI_AP_CONFIG_CHARACTERISTIC_UUID "********-****-****-****-************"
+
 char APSSID[] = "ESP_env_monitor";
 char APPASS[] = "********"; 
 char SSID[] = "****";

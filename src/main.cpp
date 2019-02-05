@@ -22,6 +22,8 @@ uint8_t WIFI_STATUS_STATEMENT_CONNECTING_LENGTH = 4;
 char WIFI_STATUS_STATEMENT_NOTCONNECTING[] = "false";
 uint8_t WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH = 5;
 
+String WifiApConfigReserved = "hoge";
+
 String ResultStr = "";
 bool deviceConnected = false;
 float TempHistory[TEMP_HISTORY_LENGTH] = {0};
@@ -32,8 +34,16 @@ BLECharacteristic *wifiConfigPostCharacteristic;
 BLECharacteristic *wifiStatusCharacteristic;
 BLECharacteristic *wifiAPConnectCharacteristic;
 BLECharacteristic *wifiAPDisconnectCharacteristic;
+BLECharacteristic *getWifiAPConfigCharacteristic;
 ServerObject Server;
 ESPIFFS espiffs;
+
+void reserveWifiAPConfig(void *pvParamaters){
+  while(true){
+    WifiApConfigReserved = espiffs.readFile(WIFI_CONF_DIR);
+    vTaskDelay(5000);
+  }
+}
 
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
@@ -164,6 +174,7 @@ void setup(){
   BLEDevice::init(DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
   BLEService *pService = pServer->createService(SERVICE_UUID);
+  BLEService *debugService = pServer->createService(DEBUG_SERVICEUUID);
 
   pServer->setCallbacks(new MyServerCallbacks());
 
@@ -173,6 +184,7 @@ void setup(){
   wifiConfigPostCharacteristic = pService->createCharacteristic(WIFI_CONFIG_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
   wifiAPConnectCharacteristic = pService->createCharacteristic(WIFI_AP_CONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
   wifiAPDisconnectCharacteristic = pService->createCharacteristic(WIFI_AP_DISCONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+  getWifiAPConfigCharacteristic = debugService->createCharacteristic(GET_WIFI_AP_CONFIG_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
 
   // set BLE characteristic callbacks
   wifiConfigPostCharacteristic->setCallbacks(new WifiConfigPostCharacteristicCallbacks());
@@ -181,6 +193,7 @@ void setup(){
 
   // BLE server open
   pService->start();
+  debugService->start();
   pServer->getAdvertising()->start();
 
   // setting Wifi server
@@ -190,15 +203,18 @@ void setup(){
   Server.setResponse(80, "/", &homePage);
   Server.openAllServers();
   
-  setupSensors(); 
+  setupSensors();
+  xTaskCreatePinnedToCore(reserveWifiAPConfig, "reserveWifiAPConfig", 9000, NULL, 1, NULL, 0);
 }
 
 void loop(){
   InternalTemp = temperatureRead();
   getBME280Data(EnvBuff);
   char resultCharBuff[512];
+  char wifiAPConfigCharBuff[1024];
   uint8_t resultUint8Buff[512];
   uint8_t wifiStatusResult[8];
+  uint8_t wifiAPConfigUint8_tBuff[1024];
 
   utils.slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
   TempHistory[0] = EnvBuff[0];
@@ -215,6 +231,10 @@ void loop(){
     utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_NOTCONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
     wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
   }
+
+  WifiApConfigReserved.toCharArray(wifiAPConfigCharBuff, 1024);
+  utils.charArrToUint8_tArr(wifiAPConfigCharBuff, wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
+  getWifiAPConfigCharacteristic->setValue(wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
 
   pCharacteristic->setValue(resultUint8Buff, ResultStr.length());
   pCharacteristic->notify();
