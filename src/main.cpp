@@ -16,6 +16,7 @@
  
 #define SERIAL_BAUD 115200
 #define TEMP_HISTORY_LENGTH 10
+#define TEMP_ADJ_RATIO 0.083
 
 char WIFI_STATUS_STATEMENT_CONNECTING[] = "true";
 uint8_t WIFI_STATUS_STATEMENT_CONNECTING_LENGTH = 4;
@@ -25,6 +26,7 @@ uint8_t WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH = 5;
 String WifiApConfigReserved = "hoge";
 
 String ResultStr = "";
+String ResultDebugStr = "";
 bool deviceConnected = false;
 float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
@@ -35,6 +37,7 @@ BLECharacteristic *wifiStatusCharacteristic;
 BLECharacteristic *wifiAPConnectCharacteristic;
 BLECharacteristic *wifiAPDisconnectCharacteristic;
 BLECharacteristic *getWifiAPConfigCharacteristic;
+BLECharacteristic *sensorPostCharacteristic;
 ServerObject Server;
 ESPIFFS espiffs;
 
@@ -118,7 +121,7 @@ class WifiConfigPostCharacteristicCallbacks: public BLECharacteristicCallbacks{
   }
 };
 
-String makeResult(){
+String makeResult_debug(){
   String result = "";
   float tempAve = 0;
   float tempCnt = 0;
@@ -138,7 +141,7 @@ String makeResult(){
     result += "   Temp_Ave: ";
     result += String(tempAve);
     result += "   Temp_Adj_Simple: ";
-    result += String(EnvBuff[0] - (InternalTemp * 0.083));
+    result += String(EnvBuff[0] - (InternalTemp * TEMP_ADJ_RATIO));
     result += "   Temp_Ave_Adj_Simple: ";
     result += String(tempAve - (InternalTemp * 0.083));
     result += "   Temp_CPU: ";
@@ -152,6 +155,33 @@ String makeResult(){
   }else{
     return "";
   }
+}
+
+String makeResult(){
+  String result = "";
+  float tempAve = 0;
+  float tempCnt = 0;
+  float tempSum = 0;
+
+  if(!std::isnan(EnvBuff[0]) && !std::isnan(EnvBuff[1]) && !std::isnan(EnvBuff[2])){
+    for(int i = 0; i < TEMP_HISTORY_LENGTH; i++){
+      if(TempHistory[i] != 0 && !std::isnan(TempHistory[i])){
+        tempSum += TempHistory[i];
+        tempCnt += 1;
+      }
+    }
+    tempAve = tempSum / tempCnt;
+
+    result += String(EnvBuff[0]) + ','; // raw
+    result += String(tempAve)  + ','; // raw ave
+    result += String(EnvBuff[0] - (InternalTemp * TEMP_ADJ_RATIO)) + ','; // simple adj
+    result += String(tempAve - (InternalTemp * 0.083)); // simple adj ave
+    result += String(InternalTemp) + ','; // cpu temp
+    result += String(EnvBuff[1]) + ','; // humidity
+    result += String(EnvBuff[2]) + ','; // pressure
+
+    return result;
+  }else return "";
 }
 
 void homePageCallback(ChainArray params, String *resp, WiFiClient *client){
@@ -174,7 +204,7 @@ void setup(){
   BLEDevice::init(DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
   BLEService *pService = pServer->createService(SERVICE_UUID);
-  BLEService *debugService = pServer->createService(DEBUG_SERVICEUUID);
+  BLEService *debugService = pServer->createService(DEBUG_SERVICE_UUID);
 
   pServer->setCallbacks(new MyServerCallbacks());
 
@@ -185,6 +215,7 @@ void setup(){
   wifiAPConnectCharacteristic = pService->createCharacteristic(WIFI_AP_CONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
   wifiAPDisconnectCharacteristic = pService->createCharacteristic(WIFI_AP_DISCONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
   getWifiAPConfigCharacteristic = debugService->createCharacteristic(GET_WIFI_AP_CONFIG_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+  sensorPostCharacteristic = pService->createCharacteristic(SENSOR_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
 
   // set BLE characteristic callbacks
   wifiConfigPostCharacteristic->setCallbacks(new WifiConfigPostCharacteristicCallbacks());
@@ -211,16 +242,22 @@ void loop(){
   InternalTemp = temperatureRead();
   getBME280Data(EnvBuff);
   char resultCharBuff[512];
+  char resultDebugCharBuff[512];
   char wifiAPConfigCharBuff[1024];
+  uint8_t resultDebugUint8Buff[512];
   uint8_t resultUint8Buff[512];
   uint8_t wifiStatusResult[8];
   uint8_t wifiAPConfigUint8_tBuff[1024];
 
   utils.slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
   TempHistory[0] = EnvBuff[0];
-  makeResult() != "" ? ResultStr = makeResult() : ResultStr;
+  ResultDebugStr = makeResult_debug() != "" ? makeResult_debug() : ResultDebugStr;
+  ResultStr = makeResult() != "" ? makeResult() : ResultStr;
 
-  // Serial.println(ResultStr);
+  // Serial.println(ResultDebugStr);
+  ResultDebugStr.toCharArray(resultDebugCharBuff, 512);
+  utils.charArrToUint8_tArr(resultDebugCharBuff, resultDebugUint8Buff, ResultDebugStr.length());
+
   ResultStr.toCharArray(resultCharBuff, 512);
   utils.charArrToUint8_tArr(resultCharBuff, resultUint8Buff, ResultStr.length());
 
@@ -236,7 +273,9 @@ void loop(){
   utils.charArrToUint8_tArr(wifiAPConfigCharBuff, wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
   getWifiAPConfigCharacteristic->setValue(wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
 
-  pCharacteristic->setValue(resultUint8Buff, ResultStr.length());
+  sensorPostCharacteristic->setValue(resultUint8Buff, ResultStr.length());
+
+  pCharacteristic->setValue(resultDebugUint8Buff, ResultDebugStr.length());
   pCharacteristic->notify();
 
   Server.requestHandle(80);

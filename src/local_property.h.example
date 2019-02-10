@@ -4,13 +4,14 @@
 
 #define DEVICE_NAME "ESP_env_monitor"
 #define SERVICE_UUID "********-****-****-****-************"
+#define DEBUG_SERVICE_UUID "********-****-****-****-************"
+
 #define CHARACTERISTIC_UUID "********-****-****-****-************"
 #define WIFI_CONFIG_POST_CHARACTERISTIC_UUID "********-****-****-****-************"
 #define WiFI_STATUS_CHARACTERISTIC_UUID "********-****-****-****-************"
 #define WIFI_AP_CONNECT_CHARACTERISTIC_UUID "********-****-****-****-************"
 #define WIFI_AP_DISCONNECT_CHARACTERISTIC_UUID "********-****-****-****-************"
 
-#define DEBUG_SERVICEUUID "********-****-****-****-************"
 #define GET_WIFI_AP_CONFIG_CHARACTERISTIC_UUID "********-****-****-****-************"
 
 char APSSID[] = "ESP_env_monitor";
