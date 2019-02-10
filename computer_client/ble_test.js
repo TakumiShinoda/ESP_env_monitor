@@ -1,8 +1,9 @@
 const noble = require('noble-mac');
+const notifier = require('node-notifier');
 
-const DeviceName = 'ENV_Monitor_BLE';
-const ServiceUUIDs = ["81d78b05-4e0a-4644-b364-b79312e4c307"];
-const CharacteristicUUIDs = ["0989bf07-e886-443e-82db-7108726bb650"];
+const DeviceName = 'ESP_env_monitor';
+const ServiceUUIDs = ["11111110-535d-450f-badb-10b0e18d608d"];
+const CharacteristicUUIDs = ["22222220-d562-48f3-9fbc-d11d605e3258"];
 
 function timeout(milli, callback){
   return new Promise((res, rej) => {
@@ -109,6 +110,7 @@ noble.on('discover', function(peripheral) {
   console.log(deviceName);
   noble.stopScanning();
   if(deviceName == DeviceName){
+    console.log('hgoe')
     connect(peripheral)
       .then(() => {
         console.log('connected');
@@ -129,7 +131,13 @@ noble.on('discover', function(peripheral) {
         return recvRX(chara);
       })
       .then((data) => {
-        console.log(data.toString());
+        const result = data.toString();
+
+        console.log(result);
+        notifier.notify({
+          'title': 'ESP32_env_monitor',
+          'message': result
+        });        
         disconnect(peripheral)
           .then(() => {
             console.log('Disconnected')

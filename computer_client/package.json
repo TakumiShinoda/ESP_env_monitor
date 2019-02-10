@@ -33,6 +33,7 @@
     "gulp-plumber": "^1.2.0",
     "gulp-pug": "^3.3.0",
     "hard-source-webpack-plugin": "^0.13.1",
+    "node-notifier": "^5.4.0",
     "style-loader": "^0.23.1",
     "ts-loader": "^5.2.1",
     "typescript": "^3.1.2",
