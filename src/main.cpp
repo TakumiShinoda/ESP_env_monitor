@@ -175,10 +175,10 @@ String makeResult(){
     result += String(EnvBuff[0]) + ','; // raw
     result += String(tempAve)  + ','; // raw ave
     result += String(EnvBuff[0] - (InternalTemp * TEMP_ADJ_RATIO)) + ','; // simple adj
-    result += String(tempAve - (InternalTemp * 0.083)); // simple adj ave
+    result += String(tempAve - (InternalTemp * 0.083))  + ','; // simple adj ave
     result += String(InternalTemp) + ','; // cpu temp
     result += String(EnvBuff[1]) + ','; // humidity
-    result += String(EnvBuff[2]) + ','; // pressure
+    result += String(EnvBuff[2]); // pressure
 
     return result;
   }else return "";

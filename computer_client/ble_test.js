@@ -3,7 +3,7 @@ const notifier = require('node-notifier');
 
 const DeviceName = 'ESP_env_monitor';
 const ServiceUUIDs = ["11111110-535d-450f-badb-10b0e18d608d"];
-const CharacteristicUUIDs = ["22222220-d562-48f3-9fbc-d11d605e3258"];
+const CharacteristicUUIDs = ["22222226-d562-48f3-9fbc-d11d605e3258"];
 
 function timeout(milli, callback){
   return new Promise((res, rej) => {
@@ -96,10 +96,10 @@ function recvRX(chara){
 
 noble.on('stateChange', function(state) {
   if (state === 'poweredOn') {
-    console.log('Power on.');
+    // console.log('Power on.');
     noble.startScanning();
   } else {
-    console.log('Failed');
+    // console.log('Failed');
     noble.stopScanning();
   }
 });
@@ -107,53 +107,54 @@ noble.on('stateChange', function(state) {
 noble.on('discover', function(peripheral) {
   let deviceName = peripheral.advertisement.localName;
 
-  console.log(deviceName);
+  // console.log(deviceName);
   noble.stopScanning();
   if(deviceName == DeviceName){
-    console.log('hgoe')
+    // console.log('hgoe')
     connect(peripheral)
       .then(() => {
-        console.log('connected');
+        // console.log('connected');
         return findService(peripheral, ServiceUUIDs);
       })
       .then((services) => {
         let service = null;
 
-        console.log('get services');
+        // console.log('get services');
         for(var i = 0; i < services.length; i++) if(services[i].uuid == ServiceUUIDs[0].replace(/-/g, '')) service = services[i];
         return findCharacteristic(service, CharacteristicUUIDs);
       })
       .then((charas) => {
         let chara = null;
 
-        console.log('get charas');
+        // console.log('get charas');
         for(var i = 0; i < charas.length; i++) if(charas[i].uuid == CharacteristicUUIDs[0].replace(/-/g, '')) chara = charas[i];
         return recvRX(chara);
       })
       .then((data) => {
         const result = data.toString();
 
-        console.log(result);
-        notifier.notify({
-          'title': 'ESP32_env_monitor',
-          'message': result
-        });        
+        // console.log(result);
+        // notifier.notify({
+        //   'title': 'ESP32_env_monitor',
+        //   'message': result
+        // });        
         disconnect(peripheral)
           .then(() => {
-            console.log('Disconnected')
+            // console.log('Disconnected')
+            console.log(result);
             process.exit(0);
           })
           .catch(() => { console.log('Failed to disconnect') });
       })
       .catch((err) => {
-        console.log('Error: ', err);
+        // console.log('Error: ', err);
         if(err == 'Time out.') process.exit(1);
       	disconnect(peripheral)
           .then(() => {
-            console.log('Disconnected');
+            // console.log('Disconnected');
             noble.startScanning();
           })
-          .catch(() => { console.log('Failed to disconnect') });
+          .catch(() => {  console.log('Failed to disconnect') });
       });
   }else{
     noble.startScanning();

@@ -1,7 +1,7 @@
 import Dashboard from './Dashboard'
 import WiFiTab from './WiFi'
 import BLETab from './BLE'
-import SensorTab from './Sensor'
+import { SensorTab } from './Sensor'
 
 interface SettingFieldInterface{
   render(id: number, prop: {}): void
@@ -10,15 +10,17 @@ interface SettingFieldInterface{
 const dashboard = new Dashboard($)
 const wifiTab = new WiFiTab($)
 const bleTab = new BLETab($)
-const sensorTab = new SensorTab($)
+// const sensorTab = new SensorTab($)
 
 export default class SettingField implements SettingFieldInterface{
   private $: JQueryStatic
   private TargetId: string 
+  SensorTab: SensorTab
 
   constructor(id: string, _$: JQueryStatic){
     this.$ = _$
     this.TargetId = id
+    this.SensorTab = new SensorTab(this.$)
   }
 
   render(id: number, prop: {}){
@@ -36,8 +38,8 @@ export default class SettingField implements SettingFieldInterface{
         bleTab.applyStyle()
         break
       case 3: 
-        $('#' + this.TargetId).append(sensorTab.renderElement({}))
-        sensorTab.applyStyle()
+        $('#' + this.TargetId).append(this.SensorTab.renderElement({}))
+        this.SensorTab.applyStyle()
         break
       default: break
     }
