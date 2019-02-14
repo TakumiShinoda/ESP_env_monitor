@@ -1,5 +1,6 @@
 import Utils from '../../../Utils'
 import FieldInterface from './FieldInterface'
+import { SensorObj } from './Sensor'
 
 const Styles: any = {
   'default': {
@@ -32,7 +33,7 @@ const Styles: any = {
       'list-style': 'none',
       'margin-bottom': '0',
     },
-    '#overviewListLastUpdate': {
+    '#lastUpdateOverview': {
       'font-size': '12px',
       'text-align': 'right',
       'margin-top': '10px',
@@ -49,6 +50,9 @@ export default class Dashboard implements FieldInterface{
     this.TargetId = targetId
   }
 
+  static OverviewList = ['Temperature', 'Humidity', 'Pressure']
+  static OverviewListUnits = ['°C', '%', 'hPa']
+
   private statusList(): string{
     let ul: JQuery<HTMLElement> = $('<ul id=statusList>')
     let list: string[] = ['WiFi Power On', 'LAN Connection', 'BLE Connection']
@@ -61,13 +65,20 @@ export default class Dashboard implements FieldInterface{
 
   private overviewList(): string{
     let ul: JQuery<HTMLElement> = $('<ul id=overviewList>')
-    let list: string[] = ['Temperature', 'Humidity', 'Pressure']
 
-    for(var i = 0; i < list.length; i++){
-      ul.append($('<li>').append(list[i] + ': false'))
+    for(var i = 0; i < Dashboard.OverviewList.length; i++){
+      ul.append($(`<li id="${Dashboard.OverviewList[i]}Overview">`).append(Dashboard.OverviewList[i] + ': NoData'))
     }
-    ul.append($('<li id=overviewListLastUpdate>').append('LastUpdate: 2019/1/30/16:19:25'))
+    ul.append($('<li id=lastUpdateOverview>').append('LastUpdate: xxxx/xx/xx/xx:xx:xx'))
     return Utils.convertToHTML(ul)
+  }
+
+  updateOverviewList(sensorObj​​: SensorObj){
+    let pressure: number = parseInt(sensorObj.pressure) / 100
+    let args: string[] = [sensorObj.adjTempAve, sensorObj.humidity, pressure.toString(), sensorObj.moment]
+
+    for(var o in Dashboard.OverviewList) $(`#${Dashboard.OverviewList[o]}Overview`).text(`${Dashboard.OverviewList[o]}: ${args[o]}${Dashboard.OverviewListUnits[o]}`)
+    $('#lastUpdateOverview').text(`Last Update: ${args[args.length - 1].replace(/-/g, '/')}`)
   }
 
   applyStyle(){

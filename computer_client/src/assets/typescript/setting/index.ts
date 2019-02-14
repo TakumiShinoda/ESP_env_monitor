@@ -22,13 +22,13 @@ $(document).ready(() => {
   })
 
   menubar.render()
-  openSetting(3)
+  openSetting(0)
   // settingField.SensorTab.reloadSensorInfo({rawTemp: '20', rawTempAve: '20'})
 
   ipcRenderer.on('updateSensorInfos', (ev: any, args: {data: string[]}) => {
     console.log(args)
     if(args.data.length == 8){
-      let sensorObj: SensorObj​​ = {
+      let sensorObj: SensorObj = {
         rawTemp: args.data[0], 
         rawTempAve: args.data[1], 
         adjTemp: args.data[2],
@@ -38,6 +38,7 @@ $(document).ready(() => {
         pressure: args.data[6],
         moment: args.data[7]
       }
+      settingField.Dashboard.updateOverviewList(sensorObj)
       settingField.SensorTab.reloadSensorInfo(sensorObj)
     }
   })

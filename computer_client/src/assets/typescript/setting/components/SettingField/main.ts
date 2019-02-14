@@ -7,7 +7,6 @@ interface SettingFieldInterface{
   render(id: number, prop: {}): void
 }
 
-const dashboard = new Dashboard($)
 const wifiTab = new WiFiTab($)
 const bleTab = new BLETab($)
 // const sensorTab = new SensorTab($)
@@ -16,18 +15,20 @@ export default class SettingField implements SettingFieldInterface{
   private $: JQueryStatic
   private TargetId: string 
   SensorTab: SensorTab
+  Dashboard: Dashboard
 
   constructor(id: string, _$: JQueryStatic){
     this.$ = _$
     this.TargetId = id
     this.SensorTab = new SensorTab(this.$)
+    this.Dashboard = new Dashboard(this.$)
   }
 
   render(id: number, prop: {}){
     switch(id){
       case 0: 
-        $('#' + this.TargetId).append(dashboard.renderElement({}))
-        dashboard.applyStyle()
+        $('#' + this.TargetId).append(this.Dashboard.renderElement({}))
+        this.Dashboard.applyStyle()
         break
       case 1: 
         $('#' + this.TargetId).append(wifiTab.renderElement({}))
