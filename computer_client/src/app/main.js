@@ -1,4 +1,5 @@
-const {app, BrowserWindow, ipcMain} = require('electron');
+const {app, BrowserWindow, ipcMain, TouchBar} = require('electron');
+const {  TouchBarLabel, TounchBarButton, TouchBarSpacer } = TouchBar
 const {distPath} = require('../../dev/path');
 
 const { exec, spawn } = require('child_process');
@@ -27,6 +28,23 @@ app.on('ready', () => {
     mainWindow = null;
   });
 
+  const tempTounchLabel = new TouchBarLabel();
+  const humidityTounchLabel = new TouchBarLabel();
+  const pressureTouchLabel = new TouchBarLabel();
+  tempTounchLabel.label = '0°C';
+  humidityTounchLabel.label = '0%';
+  pressureTouchLabel.label = '0hPa'
+
+  const touchBar = new TouchBar([
+    tempTounchLabel,
+    new TouchBarSpacer({size: 'small'}),
+    humidityTounchLabel,
+    new TouchBarSpacer({size: 'small'}),
+    pressureTouchLabel
+  ]);
+
+  mainWindow.setTouchBar(touchBar)
+ 
   setInterval(() => {
     let ble_proc = null;
 
@@ -48,6 +66,9 @@ app.on('ready', () => {
 
       resultArr.push(moment);
       mainWindow.webContents.send('updateSensorInfos', {data: resultArr});
+      tempTounchLabel.label = `${resultArr[3]}°C`;
+      humidityTounchLabel.label = `${resultArr[5]}%`
+      pressureTouchLabel.label = `${parseInt(resultArr[6]) / 100}hPa`
     })
     .catch((err) => {
       if(ble_proc != null) ble_proc.kill();
