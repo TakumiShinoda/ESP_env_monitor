@@ -141,10 +141,29 @@ noble.on('discover', function(peripheral) {
         disconnect(peripheral)
           .then(() => {
             // console.log('Disconnected')
-            console.log(result);
+            let resultSplit = result.split(',');
+            let resultJsonString = `{
+              "sensorInfos": {
+                "rawTemp": ${resultSplit[0]},
+                "rawTempAve": ${resultSplit[1]},
+                "adjTemp": ${resultSplit[2]},
+                "adjTempAve": ${resultSplit[3]},
+                "cpuTemp": ${resultSplit[4]},
+                "humidity": ${resultSplit[5]},
+                "pressure": ${resultSplit[6]}
+              },
+              "wifiInfos": {
+              }
+            }`
+
+            if(JSON.parse(resultJsonString)) console.log(resultJsonString)
+            
             process.exit(0);
           })
-          .catch(() => { console.log('Failed to disconnect') });
+          .catch((err) => {
+            console.log(err);
+            process.exit(0);
+          });
       })
       .catch((err) => {
         // console.log('Error: ', err);

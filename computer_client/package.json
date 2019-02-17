@@ -45,6 +45,7 @@
   "dependencies": {
     "noble-mac": "git://github.com/Timeular/noble-mac",
     "jquery": "^3.3.1",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "menubar": "^5.2.3"
   }
 }

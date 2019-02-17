@@ -74,6 +74,7 @@ export default class Dashboard implements FieldInterface{
   }
 
   updateOverviewList(sensorObj​​: SensorObj){
+    console.log('senseObj', sensorObj)
     let pressure: number = parseInt(sensorObj.pressure) / 100
     let args: string[] = [sensorObj.adjTempAve, sensorObj.humidity, pressure.toString(), sensorObj.moment]
 

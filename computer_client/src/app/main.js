@@ -1,19 +1,30 @@
 const {app, BrowserWindow, ipcMain, TouchBar} = require('electron');
-const {  TouchBarLabel, TounchBarButton, TouchBarSpacer } = TouchBar
+const { TouchBarLabel, TounchBarButton, TouchBarSpacer } = TouchBar
+const menubar = require('menubar')
+const path = require('path')
 const {distPath} = require('../../dev/path');
 
 const { exec, spawn } = require('child_process');
 const Moment = require('moment');
 
+const mb = new menubar({
+  index: `file:///Users/takumishinoda/Documents/Platformio/Projects/ESP_env_monitor/computer_client/src/app/index.html`
+});
+
 function timeover(milli, callback){
   return new Promise((res, rej) => {
     let timer = setTimeout(() => {
-      rej('Time out.');
+      rej('Time out.') ;
     }, milli);
     
     callback(res, rej, timer);
   });
 }
+
+mb.on('ready', () => {
+  // mb.showWindow();
+});
+
 
 app.on('ready', () => {
   mainWindow = new BrowserWindow({
@@ -44,7 +55,7 @@ app.on('ready', () => {
   ]);
 
   mainWindow.setTouchBar(touchBar)
- 
+  
   setInterval(() => {
     let ble_proc = null;
 
@@ -61,14 +72,15 @@ app.on('ready', () => {
       });
     })
     .then((result) => {
-      let resultArr = result.toString().split(',');
+      let resultJson =  JSON.parse(result);
       let moment = Moment().format('YYYY-MM-DD HH:mm:ss');
 
-      resultArr.push(moment);
-      mainWindow.webContents.send('updateSensorInfos', {data: resultArr});
-      tempTounchLabel.label = `${resultArr[3]}°C`;
-      humidityTounchLabel.label = `${resultArr[5]}%`
-      pressureTouchLabel.label = `${parseInt(resultArr[6]) / 100}hPa`
+      console.log(resultJson)
+      resultJson.sensorInfos.moment = moment;
+      mainWindow.webContents.send('updateSensorInfos', {data: resultJson});
+      tempTounchLabel.label = `${resultJson.sensorInfos.adjTempAve}°C`;
+      humidityTounchLabel.label = `${resultJson.sensorInfos.humidity}%`
+      pressureTouchLabel.label = `${parseInt(resultJson.sensorInfos.pressure) / 100}hPa`
     })
     .catch((err) => {
       if(ble_proc != null) ble_proc.kill();
