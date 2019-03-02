@@ -8,7 +8,8 @@ const { exec, spawn } = require('child_process');
 const Moment = require('moment');
 
 const mb = new menubar({
-  index: `file:///Users/takumishinoda/Documents/Platformio/Projects/ESP_env_monitor/computer_client/src/app/index.html`
+  width: 600,
+  height: 400
 });
 
 function timeover(milli, callback){
@@ -22,9 +23,11 @@ function timeover(milli, callback){
 }
 
 mb.on('ready', () => {
-  // mb.showWindow();
 });
 
+mb.on('after-create-window', () => {
+  mb.window.loadURL(`file:///Users/takumishinoda/Documents/Platformio/Projects/ESP_env_monitor/computer_client/src/app/index.html`)
+});
 
 app.on('ready', () => {
   mainWindow = new BrowserWindow({
