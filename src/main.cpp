@@ -199,8 +199,8 @@ void setup(){
     ESP.restart();
   }
 
-  WiFi.disconnect();
-  startAP(APSSID, APPASS);
+  // WiFi.disconnect();
+  // startAP(APSSID, APPASS);
   BLEDevice::init(DEVICE_NAME);
   BLEServer *pServer = BLEDevice::createServer();
   BLEService *pService = pServer->createService(SERVICE_UUID);
@@ -228,11 +228,11 @@ void setup(){
   pServer->getAdvertising()->start();
 
   // setting Wifi server
-  Server.setNotFound("404: Not found.");
-  Server.addServer(80);
+  // Server.setNotFound("404: Not found.");
+  // Server.addServer(80);
 
-  Server.setResponse(80, "/", &homePage);
-  Server.openAllServers();
+  // Server.setResponse(80, "/", &homePage);
+  // Server.openAllServers();
   
   setupSensors();
   xTaskCreatePinnedToCore(reserveWifiAPConfig, "reserveWifiAPConfig", 9000, NULL, 1, NULL, 0);
@@ -278,7 +278,7 @@ void loop(){
   pCharacteristic->setValue(resultDebugUint8Buff, ResultDebugStr.length());
   pCharacteristic->notify();
 
-  Server.requestHandle(80);
+  // Server.requestHandle(80);
 
   delay(500);
 }
