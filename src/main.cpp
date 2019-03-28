@@ -202,6 +202,7 @@ void setup(){
   // WiFi.disconnect();
   // startAP(APSSID, APPASS);
   BLEDevice::init(DEVICE_NAME);
+  BLEDevice::setPower(ESP_PWR_LVL_N14);
   BLEServer *pServer = BLEDevice::createServer();
   BLEService *pService = pServer->createService(SERVICE_UUID);
   BLEService *debugService = pServer->createService(DEBUG_SERVICE_UUID);
