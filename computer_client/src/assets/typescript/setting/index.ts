@@ -9,6 +9,16 @@ import '../../css/setting/styles.css'
 
 let menuBar = new Menubar('menubarArea', $)
 let settingField = new SettingField('mainField', $)
+let SensorBuff​​: SensorObj = {
+  rawTemp: ``,
+  rawTempAve: ``,
+  adjTemp: ``,
+  adjTempAve: ``,
+  cpuTemp: ``,
+  humidity: ``,
+  pressure: ``,
+  moment: ``,
+}
 
 function openSetting(index: number){
   menuBar.changeFocus(index)
@@ -25,9 +35,13 @@ $(document).ready(() => {
   openSetting(0)
   // settingField.SensorTab.reloadSensorInfo({rawTemp: '20', rawTempAve: '20'})
 
+  setInterval(() => {
+    settingField.Dashboard.updateOverviewList(SensorBuff)
+    settingField.SensorTab.reloadSensorInfo(SensorBuff)
+  }, 100)
+
   ipcRenderer.on('updateSensorInfos', (ev: any, args: any) => {
-    // console.log(args)
-    settingField.Dashboard.updateOverviewList(args.data.sensorInfos)
-    settingField.SensorTab.reloadSensorInfo(args.data.sensorInfos)
+    // console.log('hoge', args.data.sensorInfos)
+    SensorBuff = args.data.sensorInfos
   })
 })  
