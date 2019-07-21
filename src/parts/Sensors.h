@@ -1,6 +1,6 @@
-#include <limits>
+#include <BME280I2C.h>
+#include <Wire.h>
 #include <cmath>
-#include "../Utils.h"
 
 #define TRY_BEGIN 10
 
@@ -15,7 +15,6 @@ BME280I2C::Settings settings(
   BME280I2C::I2CAddr_0x76
 );
 
-Utils utils;
 BME280I2C bme(settings);
 
 void setupSensors(){

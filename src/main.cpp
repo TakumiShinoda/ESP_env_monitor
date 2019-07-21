@@ -1,5 +1,3 @@
-#include <BME280I2C.h>
-#include <Wire.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
@@ -9,6 +7,7 @@
 
 #include "local_property.h"
 #include "parts/Sensors.h"
+#include "./Utils.h"
 
 #define SERIAL_BAUD 115200
 #define TEMP_HISTORY_LENGTH 10
@@ -19,6 +18,7 @@ float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
 float InternalTemp = 0;
 BLECharacteristic *pCharacteristic;
+Utils utils;
 
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
