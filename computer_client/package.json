@@ -43,7 +43,7 @@
     "webpack-stream": "^4.0.0"
   },
   "dependencies": {
-    "noble-mac": "git://github.com/Timeular/noble-mac",
+    "noble-mac": "https://github.com/Timeular/noble-mac.git",
     "jquery": "^3.3.1",
     "path": "^0.12.7",
     "menubar": "^5.2.3"
