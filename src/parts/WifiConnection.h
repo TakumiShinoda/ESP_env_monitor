@@ -1,5 +1,5 @@
-#include <WiFi.h>
 #include <Arduino.h>
+#include <WiFi.h>
 
 #define FREQ_CONNECT_AP 500 // ms
 #define TRY_CONNECT_AP 10 // times

@@ -1,10 +1,10 @@
-#include <BME280I2C.h>
+#include <Arduino.h>
 #include <Wire.h>
+#include <WiFi.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
-#include <WiFi.h>
 #include <cmath>
 #include <iostream>
 
