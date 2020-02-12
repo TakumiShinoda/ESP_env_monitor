@@ -1,3 +1,6 @@
+#ifndef WIFICONNECTION_H
+#define WIFICONNECTION_H
+
 #include <Arduino.h>
 #include <WiFi.h>
 
@@ -58,3 +61,5 @@ void startAP(char *apssid, char *appass){
   WiFi.mode(WIFI_MODE_APSTA);
   WiFi.softAP(apssid, appass);
 }
+
+#endif

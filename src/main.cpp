@@ -5,6 +5,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <ESP32Time.h>
 #include <cmath>
 #include <iostream>
 
@@ -13,6 +14,7 @@
 #include "parts/WifiConnection.h"
 #include "ServerObject.h"
 #include "ESPIFFS.h"
+#include "RTC.h"
 
 // #define COMPILE_WIFI
 #define COMPILE_SETUP
@@ -44,6 +46,7 @@ BLECharacteristic *getWifiAPConfigCharacteristic;
 BLECharacteristic *sensorPostCharacteristic;
 ServerObject Server;
 ESPIFFS espiffs;
+RTC rtc;
 
 void reserveWifiAPConfig(void *pvParamaters){
   while(true){
@@ -202,8 +205,10 @@ void setup(){
       ESP.restart();
     }
 
-    // WiFi.disconnect();
-    // startAP(APSSID, APPASS);
+    #ifdef COMPILE_WIFI
+      WiFi.disconnect();
+      startAP(APSSID, APPASS);
+    #endif
     BLEDevice::init(DEVICE_NAME);
     BLEDevice::setPower(ESP_PWR_LVL_N14);
     BLEServer *pServer = BLEDevice::createServer();
