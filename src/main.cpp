@@ -13,6 +13,10 @@
 #include "parts/WifiConnection.h"
 #include "ServerObject.h"
 #include "ESPIFFS.h"
+
+// #define COMPILE_WIFI
+#define COMPILE_SETUP
+#define COMPILE_LOOP
  
 #define SERIAL_BAUD 115200
 #define TEMP_HISTORY_LENGTH 10
@@ -189,97 +193,105 @@ void homePageCallback(ChainArray params, String *resp, WiFiClient *client){
 }
 
 void setup(){
-  Html homePage("", homePageCallback);
+  #ifdef COMPILE_SETUP
+    Serial.begin(SERIAL_BAUD);
+    delay(500);
 
-  Serial.begin(SERIAL_BAUD);
-  delay(500);
+    if(!espiffs.begin()){
+      Serial.println("ESPIFFS failed.");
+      ESP.restart();
+    }
 
-  if(!espiffs.begin()){
-    Serial.println("ESPIFFS failed.");
-    ESP.restart();
-  }
+    // WiFi.disconnect();
+    // startAP(APSSID, APPASS);
+    BLEDevice::init(DEVICE_NAME);
+    BLEDevice::setPower(ESP_PWR_LVL_N14);
+    BLEServer *pServer = BLEDevice::createServer();
+    BLEService *pService = pServer->createService(SERVICE_UUID);
+    BLEService *debugService = pServer->createService(DEBUG_SERVICE_UUID);
 
-  // WiFi.disconnect();
-  // startAP(APSSID, APPASS);
-  BLEDevice::init(DEVICE_NAME);
-  BLEDevice::setPower(ESP_PWR_LVL_N14);
-  BLEServer *pServer = BLEDevice::createServer();
-  BLEService *pService = pServer->createService(SERVICE_UUID);
-  BLEService *debugService = pServer->createService(DEBUG_SERVICE_UUID);
+    pServer->setCallbacks(new MyServerCallbacks());
 
-  pServer->setCallbacks(new MyServerCallbacks());
+    // create BLE characteristic
+    pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+    wifiStatusCharacteristic = pService->createCharacteristic(WiFI_STATUS_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+    wifiConfigPostCharacteristic = pService->createCharacteristic(WIFI_CONFIG_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+    wifiAPConnectCharacteristic = pService->createCharacteristic(WIFI_AP_CONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+    wifiAPDisconnectCharacteristic = pService->createCharacteristic(WIFI_AP_DISCONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
+    getWifiAPConfigCharacteristic = debugService->createCharacteristic(GET_WIFI_AP_CONFIG_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+    sensorPostCharacteristic = pService->createCharacteristic(SENSOR_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
 
-  // create BLE characteristic
-  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  wifiStatusCharacteristic = pService->createCharacteristic(WiFI_STATUS_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
-  wifiConfigPostCharacteristic = pService->createCharacteristic(WIFI_CONFIG_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
-  wifiAPConnectCharacteristic = pService->createCharacteristic(WIFI_AP_CONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
-  wifiAPDisconnectCharacteristic = pService->createCharacteristic(WIFI_AP_DISCONNECT_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
-  getWifiAPConfigCharacteristic = debugService->createCharacteristic(GET_WIFI_AP_CONFIG_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
-  sensorPostCharacteristic = pService->createCharacteristic(SENSOR_POST_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+    // set BLE characteristic callbacks
+    wifiConfigPostCharacteristic->setCallbacks(new WifiConfigPostCharacteristicCallbacks());
+    wifiAPConnectCharacteristic->setCallbacks(new WifiAPConnectCharacteristicCallbacks());
+    wifiAPDisconnectCharacteristic->setCallbacks(new WifiAPDisconnectCharacteristicCallbacks());
 
-  // set BLE characteristic callbacks
-  wifiConfigPostCharacteristic->setCallbacks(new WifiConfigPostCharacteristicCallbacks());
-  wifiAPConnectCharacteristic->setCallbacks(new WifiAPConnectCharacteristicCallbacks());
-  wifiAPDisconnectCharacteristic->setCallbacks(new WifiAPDisconnectCharacteristicCallbacks());
+    // BLE server open
+    pService->start();
+    debugService->start();
+    pServer->getAdvertising()->start();
 
-  // BLE server open
-  pService->start();
-  debugService->start();
-  pServer->getAdvertising()->start();
+    // setting Wifi server
+    #ifdef COMPILE_WIFI
+      Html homePage("", homePageCallback);
 
-  // setting Wifi server
-  // Server.setNotFound("404: Not found.");
-  // Server.addServer(80);
+      Server.setNotFound("404: Not found.");
+      Server.addServer(80);
 
-  // Server.setResponse(80, "/", &homePage);
-  // Server.openAllServers();
-  
-  setupSensors();
-  xTaskCreatePinnedToCore(reserveWifiAPConfig, "reserveWifiAPConfig", 9000, NULL, 1, NULL, 0);
+      Server.setResponse(80, "/", &homePage);
+      Server.openAllServers();
+    #endif
+    
+    setupSensors();
+    xTaskCreatePinnedToCore(reserveWifiAPConfig, "reserveWifiAPConfig", 9000, NULL, 1, NULL, 0);
+  #endif
 }
 
 void loop(){
-  InternalTemp = temperatureRead();
-  getBME280Data(EnvBuff);
-  char resultCharBuff[512];
-  char resultDebugCharBuff[512];
-  char wifiAPConfigCharBuff[1024];
-  uint8_t resultDebugUint8Buff[512];
-  uint8_t resultUint8Buff[512];
-  uint8_t wifiStatusResult[8];
-  uint8_t wifiAPConfigUint8_tBuff[1024];
+  #ifdef COMPILE_LOOP
+    InternalTemp = temperatureRead();
+    getBME280Data(EnvBuff);
+    char resultCharBuff[512];
+    char resultDebugCharBuff[512];
+    char wifiAPConfigCharBuff[1024];
+    uint8_t resultDebugUint8Buff[512];
+    uint8_t resultUint8Buff[512];
+    uint8_t wifiStatusResult[8];
+    uint8_t wifiAPConfigUint8_tBuff[1024];
 
-  utils.slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
-  TempHistory[0] = EnvBuff[0];
-  ResultDebugStr = makeResult_debug() != "" ? makeResult_debug() : ResultDebugStr;
-  ResultStr = makeResult() != "" ? makeResult() : ResultStr;
+    utils.slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
+    TempHistory[0] = EnvBuff[0];
+    ResultDebugStr = makeResult_debug() != "" ? makeResult_debug() : ResultDebugStr;
+    ResultStr = makeResult() != "" ? makeResult() : ResultStr;
 
-  // Serial.println(ResultDebugStr);
-  ResultDebugStr.toCharArray(resultDebugCharBuff, 512);
-  utils.charArrToUint8_tArr(resultDebugCharBuff, resultDebugUint8Buff, ResultDebugStr.length());
+    // Serial.println(ResultDebugStr);
+    ResultDebugStr.toCharArray(resultDebugCharBuff, 512);
+    utils.charArrToUint8_tArr(resultDebugCharBuff, resultDebugUint8Buff, ResultDebugStr.length());
 
-  ResultStr.toCharArray(resultCharBuff, 512);
-  utils.charArrToUint8_tArr(resultCharBuff, resultUint8Buff, ResultStr.length());
+    ResultStr.toCharArray(resultCharBuff, 512);
+    utils.charArrToUint8_tArr(resultCharBuff, resultUint8Buff, ResultStr.length());
 
-  if(WiFi.status() == WL_CONNECTED){
-    utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_CONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_CONNECTING_LENGTH);
-    wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_CONNECTING_LENGTH);
-  }else{
-    utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_NOTCONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
-    wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
-  }
+    if(WiFi.status() == WL_CONNECTED){
+      utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_CONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_CONNECTING_LENGTH);
+      wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_CONNECTING_LENGTH);
+    }else{
+      utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_NOTCONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
+      wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
+    }
 
-  WifiApConfigReserved.toCharArray(wifiAPConfigCharBuff, 1024);
-  utils.charArrToUint8_tArr(wifiAPConfigCharBuff, wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
-  getWifiAPConfigCharacteristic->setValue(wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
+    WifiApConfigReserved.toCharArray(wifiAPConfigCharBuff, 1024);
+    utils.charArrToUint8_tArr(wifiAPConfigCharBuff, wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
+    getWifiAPConfigCharacteristic->setValue(wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
 
-  sensorPostCharacteristic->setValue(resultUint8Buff, ResultStr.length());
+    sensorPostCharacteristic->setValue(resultUint8Buff, ResultStr.length());
 
-  pCharacteristic->setValue(resultDebugUint8Buff, ResultDebugStr.length());
-  pCharacteristic->notify();
+    pCharacteristic->setValue(resultDebugUint8Buff, ResultDebugStr.length());
+    pCharacteristic->notify();
 
-  // Server.requestHandle(80);
+    #ifdef COMPILE_WIFI
+      Server.requestHandle(80);
+    #endif
 
-  delay(500);
+    delay(500);
+  #endif
 }
