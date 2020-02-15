@@ -11,9 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "jquery": "^3.4.1",
+    "noble-mac": "https://github.com/Timeular/noble-mac.git",
     "react": "^16.9.0",
-    "react-dom": "^16.9.0",
-    "noble-mac": "git://github.com/Timeular/noble-mac"
+    "react-dom": "^16.9.0"
   },
   "devDependencies": {
     "@types/jquery": "^3.3.31",

@@ -37,6 +37,10 @@ bool deviceConnected = false;
 float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
 float InternalTemp = 0;
+
+BLEServer *pServer;
+BLEService *pService;
+BLEService *debugService;
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *wifiConfigPostCharacteristic;
 BLECharacteristic *wifiStatusCharacteristic;
@@ -198,7 +202,7 @@ void homePageCallback(ChainArray params, String *resp, WiFiClient *client){
 void setup(){
   #ifdef COMPILE_SETUP
     Serial.begin(SERIAL_BAUD);
-    delay(500);
+    delay(10);
 
     if(!espiffs.begin()){
       Serial.println("ESPIFFS failed.");
@@ -209,11 +213,13 @@ void setup(){
       WiFi.disconnect();
       startAP(APSSID, APPASS);
     #endif
+
     BLEDevice::init(DEVICE_NAME);
     BLEDevice::setPower(ESP_PWR_LVL_N14);
-    BLEServer *pServer = BLEDevice::createServer();
-    BLEService *pService = pServer->createService(SERVICE_UUID);
-    BLEService *debugService = pServer->createService(DEBUG_SERVICE_UUID);
+
+    pServer = BLEDevice::createServer();
+    pService = pServer->createService(SERVICE_UUID);
+    debugService = pServer->createService(DEBUG_SERVICE_UUID);
 
     pServer->setCallbacks(new MyServerCallbacks());
 
@@ -231,10 +237,8 @@ void setup(){
     wifiAPConnectCharacteristic->setCallbacks(new WifiAPConnectCharacteristicCallbacks());
     wifiAPDisconnectCharacteristic->setCallbacks(new WifiAPDisconnectCharacteristicCallbacks());
 
-    // BLE server open
     pService->start();
     debugService->start();
-    pServer->getAdvertising()->start();
 
     // setting Wifi server
     #ifdef COMPILE_WIFI
@@ -247,6 +251,10 @@ void setup(){
       Server.openAllServers();
     #endif
     
+    if(!rtc.begin(true, SSID, PASS) == RTC_BEGIN_SUCCESS){
+      Serial.println("RTC init failed.");
+    } 
+
     setupSensors();
     xTaskCreatePinnedToCore(reserveWifiAPConfig, "reserveWifiAPConfig", 9000, NULL, 1, NULL, 0);
   #endif
@@ -254,11 +262,15 @@ void setup(){
 
 void loop(){
   #ifdef COMPILE_LOOP
+    BLEAdvertisementData advData;
+    BLEAdvertising *adv = pServer->getAdvertising();
+
     InternalTemp = temperatureRead();
     getBME280Data(EnvBuff);
     char resultCharBuff[512];
     char resultDebugCharBuff[512];
     char wifiAPConfigCharBuff[1024];
+    std::string manufacturerData = "";
     uint8_t resultDebugUint8Buff[512];
     uint8_t resultUint8Buff[512];
     uint8_t wifiStatusResult[8];
@@ -293,10 +305,49 @@ void loop(){
     pCharacteristic->setValue(resultDebugUint8Buff, ResultDebugStr.length());
     pCharacteristic->notify();
 
+    struct tm *timeNow = rtc.now();
+    uint8_t hour = 0;
+    uint8_t min = 0;
+    uint8_t sec = 0;
+    double tempInt;
+    double tempDecimal = modf(EnvBuff[0], &tempInt);
+    double humInt;
+    double humDecimal = modf(EnvBuff[1], &humInt); 
+    double preInt;
+    double preDecimal = modf(EnvBuff[2], &preInt);
+    uint8_t preIntUpper = ((uint32_t)preInt & 0x00ff0000) >> 16;
+    uint8_t preIntMid = ((uint32_t)preInt & 0x0000ff00) >> 8; 
+    uint8_t preIntLower = ((uint32_t)preInt & 0x000000ff);
+
+    if(timeNow != nullptr){
+      hour = timeNow->tm_hour;
+      min = timeNow->tm_min;
+      sec = timeNow->tm_sec;
+    }
+
+    manufacturerData += (char)hour;
+    manufacturerData += (char)min;
+    manufacturerData += (char)sec;
+    manufacturerData += (char)((uint8_t)tempInt);
+    manufacturerData += (char)((uint8_t)(tempDecimal * 100));
+    manufacturerData += (char)0;
+    manufacturerData += (char)0;
+    manufacturerData += (char)((uint8_t)humInt);
+    manufacturerData += (char)((uint8_t)(humDecimal * 100));
+    manufacturerData += (char)preIntUpper;
+    manufacturerData += (char)preIntMid;
+    manufacturerData += (char)preIntLower;
+    manufacturerData += (char)((uint8_t)(preDecimal * 100));
+
+    advData.setManufacturerData(manufacturerData);
+    adv->setAdvertisementData(advData);
+    adv->start();
+
     #ifdef COMPILE_WIFI
       Server.requestHandle(80);
     #endif
 
     delay(500);
+    adv->stop();
   #endif
 }
