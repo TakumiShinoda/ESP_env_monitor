@@ -24,6 +24,9 @@
 #define TEMP_HISTORY_LENGTH 10
 #define TEMP_ADJ_RATIO 0.083
 
+#define TIME_ADV 500
+#define TIME_SLEEP_US 1000000
+
 char WIFI_STATUS_STATEMENT_CONNECTING[] = "true";
 uint8_t WIFI_STATUS_STATEMENT_CONNECTING_LENGTH = 4;
 char WIFI_STATUS_STATEMENT_NOTCONNECTING[] = "false";
@@ -265,8 +268,9 @@ void loop(){
     BLEAdvertisementData advData;
     BLEAdvertising *adv = pServer->getAdvertising();
 
-    InternalTemp = temperatureRead();
     getBME280Data(EnvBuff);
+    InternalTemp = temperatureRead();
+    struct tm *timeNow = rtc.now();
     char resultCharBuff[512];
     char resultDebugCharBuff[512];
     char wifiAPConfigCharBuff[1024];
@@ -305,12 +309,13 @@ void loop(){
     pCharacteristic->setValue(resultDebugUint8Buff, ResultDebugStr.length());
     pCharacteristic->notify();
 
-    struct tm *timeNow = rtc.now();
     uint8_t hour = 0;
     uint8_t min = 0;
     uint8_t sec = 0;
     double tempInt;
     double tempDecimal = modf(EnvBuff[0], &tempInt);
+    double tempCPUInt;
+    double tempCPUDecimal = modf(InternalTemp, &tempCPUInt);
     double humInt;
     double humDecimal = modf(EnvBuff[1], &humInt); 
     double preInt;
@@ -332,6 +337,8 @@ void loop(){
     manufacturerData += (char)((uint8_t)(tempDecimal * 100));
     manufacturerData += (char)0;
     manufacturerData += (char)0;
+    manufacturerData += (char)((uint8_t)tempCPUInt);
+    manufacturerData += (char)((uint8_t)(tempCPUDecimal * 100));
     manufacturerData += (char)((uint8_t)humInt);
     manufacturerData += (char)((uint8_t)(humDecimal * 100));
     manufacturerData += (char)preIntUpper;
@@ -347,7 +354,9 @@ void loop(){
       Server.requestHandle(80);
     #endif
 
-    delay(500);
+    delay(TIME_ADV);
     adv->stop();
+    esp_sleep_enable_timer_wakeup(TIME_SLEEP_US);
+    esp_light_sleep_start();
   #endif
 }
