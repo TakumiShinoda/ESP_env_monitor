@@ -27,7 +27,7 @@ export class Dashboard extends Component<DashboardProps, DashboardStates>{
 
     ipcRenderer.on('updateSensorInfos', (ev: Electron.IpcRendererEvent, data: {data: {sensorInfos: SensorInfos}}) => {
       component.setState({
-        temperature: data.data.sensorInfos.adjTempAve,
+        temperature: data.data.sensorInfos.rawTemp,
         humidity: data.data.sensorInfos.humidity,
         pressure: parseFloat((data.data.sensorInfos.pressure / 100).toFixed(2))
       })
