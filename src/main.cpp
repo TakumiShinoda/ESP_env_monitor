@@ -335,8 +335,6 @@ void loop(){
     manufacturerData += (char)sec;
     manufacturerData += (char)((uint8_t)tempInt);
     manufacturerData += (char)((uint8_t)(tempDecimal * 100));
-    manufacturerData += (char)0;
-    manufacturerData += (char)0;
     manufacturerData += (char)((uint8_t)tempCPUInt);
     manufacturerData += (char)((uint8_t)(tempCPUDecimal * 100));
     manufacturerData += (char)((uint8_t)humInt);
