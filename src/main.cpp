@@ -24,8 +24,9 @@
 #define TEMP_HISTORY_LENGTH 10
 #define TEMP_ADJ_RATIO 0.083
 
-#define TIME_ADV 500
-#define TIME_SLEEP_US 1000000
+#define TIME_BLE_ADV 500 // us
+#define TIME_SLEEP_US 1000000 // ns
+#define TIME_BLE_WAIT_CONNECTING 1000 // us
 
 char WIFI_STATUS_STATEMENT_CONNECTING[] = "true";
 uint8_t WIFI_STATUS_STATEMENT_CONNECTING_LENGTH = 4;
@@ -36,7 +37,7 @@ String WifiApConfigReserved = "hoge";
 
 String ResultStr = "";
 String ResultDebugStr = "";
-bool deviceConnected = false;
+bool deviceConnecting = false;
 float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
 float InternalTemp = 0;
@@ -64,11 +65,11 @@ void reserveWifiAPConfig(void *pvParamaters){
 
 class MyServerCallbacks: public BLEServerCallbacks {
   void onConnect(BLEServer* pServer) {
-    deviceConnected = true;
+    deviceConnecting = true;
   }
 
   void onDisconnect(BLEServer* pServer) {
-    deviceConnected = false;
+    deviceConnecting = false;
   }
 };
 
@@ -200,6 +201,16 @@ String makeResult(){
 
 void homePageCallback(ChainArray params, String *resp, WiFiClient *client){
   *(resp) = ResultStr;
+}
+
+void waitForBLECommunication(){
+  uint16_t count = 0;
+
+  while(deviceConnecting){
+    count += 1;
+    if(count > TIME_BLE_WAIT_CONNECTING) break;
+    delay(1);
+  }
 }
 
 void setup(){
@@ -352,7 +363,8 @@ void loop(){
       Server.requestHandle(80);
     #endif
 
-    delay(TIME_ADV);
+    delay(TIME_BLE_ADV);
+    waitForBLECommunication();
     adv->stop();
     esp_sleep_enable_timer_wakeup(TIME_SLEEP_US);
     esp_light_sleep_start();
