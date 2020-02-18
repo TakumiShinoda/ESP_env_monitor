@@ -1,8 +1,14 @@
 const noble = require('noble-mac');
 
+const DevMode = false
+
 const DeviceName = 'ESP_env_monitor';
 const ServiceUUIDs = ["11111110-535d-450f-badb-10b0e18d608d"];
 const CharacteristicUUIDs = ["22222226-d562-48f3-9fbc-d11d605e3258"];
+
+function devPrint(mes){
+  if(DevMode) console.log(mes)
+}
 
 function timeout(milli, callback){
   return new Promise((res, rej) => {
@@ -95,86 +101,65 @@ function recvRX(chara){
 
 noble.on('stateChange', function(state) {
   if (state === 'poweredOn') {
-    // console.log('Power on.');
+    devPrint('Power on.');
     noble.startScanning();
   } else {
-    // console.log('Failed');
+    devPrint('Failed');
     noble.stopScanning();
   }
 });
 
-noble.on('discover', function(peripheral) {
+noble.on('discover', async (peripheral) => {
   let deviceName = peripheral.advertisement.localName;
 
-  // console.log(deviceName);
-  noble.stopScanning();
-  if(deviceName == DeviceName){
-    // console.log('hgoe')
-    connect(peripheral)
-      .then(() => {
-        // console.log('connected');
-        return findService(peripheral, ServiceUUIDs);
-      })
-      .then((services) => {
-        let service = null;
+  devPrint(deviceName)
+  noble.stopScanning()
+  
+  if(deviceName != DeviceName){
+    noble.startScanning()
+    return
+  }
 
-        // console.log('get services');
-        for(var i = 0; i < services.length; i++) if(services[i].uuid == ServiceUUIDs[0].replace(/-/g, '')) service = services[i];
-        return findCharacteristic(service, CharacteristicUUIDs);
-      })
-      .then((charas) => {
-        let chara = null;
+  try{
+    await connect(peripheral) 
+    devPrint('Connected')
 
-        // console.log('get charas');
-        for(var i = 0; i < charas.length; i++) if(charas[i].uuid == CharacteristicUUIDs[0].replace(/-/g, '')) chara = charas[i];
-        return recvRX(chara);
-      })
-      .then((data) => {
-        const result = data.toString();
+    let services = await findService(peripheral, ServiceUUIDs)
+    let service = null
+    for(var i = 0; i < services.length; i++) if(services[i].uuid == ServiceUUIDs[0].replace(/-/g, '')) service = services[i];
+    devPrint('Got service')
 
-        // console.log(result);
-        // notifier.notify({
-        //   'title': 'ESP32_env_monitor',
-        //   'message': result
-        // });        
-        disconnect(peripheral)
-          .then(() => {
-            // console.log('Disconnected')
-            let resultSplit = result.split(',');
-            let resultJsonString = `{
-              "sensorInfos": {
-                "rawTemp": ${resultSplit[0]},
-                "rawTempAve": ${resultSplit[1]},
-                "adjTemp": ${resultSplit[2]},
-                "adjTempAve": ${resultSplit[3]},
-                "cpuTemp": ${resultSplit[4]},
-                "humidity": ${resultSplit[5]},
-                "pressure": ${resultSplit[6]}
-              },
-              "wifiInfos": {
-              }
-            }`
+    let charas = await findCharacteristic(service, CharacteristicUUIDs)
+    let chara = null
+    for(var i = 0; i < charas.length; i++) if(charas[i].uuid == CharacteristicUUIDs[0].replace(/-/g, '')) chara = charas[i];
+    devPrint('Got characteristic')
 
-            if(JSON.parse(resultJsonString)) console.log(resultJsonString)
-            
-            process.exit(0);
-          })
-          .catch((err) => {
-            console.log(err);
-            process.exit(0);
-          });
-      })
-      .catch((err) => {
-        // console.log('Error: ', err);
-        if(err == 'Time out.') process.exit(1);
-      	disconnect(peripheral)
-          .then(() => {
-            // console.log('Disconnected');
-            noble.startScanning();
-          })
-          .catch(() => {  console.log('Failed to disconnect') });
-      });
-  }else{
-    noble.startScanning();
+    let recvResult = await recvRX(chara)
+    devPrint('Success recvRX')
+
+    await disconnect(peripheral)
+    devPrint('Disconnected')
+
+    let recvResultStr = recvResult.toString()
+    let resultSplit = recvResultStr.split(',');
+    let resultJsonString = `{
+      "sensorInfos": {
+        "rawTemp": ${resultSplit[0]},
+        "rawTempAve": ${resultSplit[1]},
+        "adjTemp": ${resultSplit[2]},
+        "adjTempAve": ${resultSplit[3]},
+        "cpuTemp": ${resultSplit[4]},
+        "humidity": ${resultSplit[5]},
+        "pressure": ${resultSplit[6]}
+      },
+      "wifiInfos": {
+      }
+    }`
+
+    if(JSON.parse(resultJsonString)) console.log(resultJsonString)
+    process.exit(0);
+  }catch(err){
+    console.error(err)
+    process.exit(1);
   }
 });
