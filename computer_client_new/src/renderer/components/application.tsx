@@ -17,22 +17,28 @@ export class Application extends Component<ApplicationProps, ApplicationStates>{
     this.state = {
       contentIndex: 0
     }
+
+    this.contents = [
+      <ContentBase content={<Dashboard parent={this} />}/>,
+      <ContentBase content={<div/>}/>,
+      <ContentBase content={<div/>}/>,
+      <ContentBase content={<div/>}/>
+    ]
   }
 
   public static menues: string[] = ['DashBoard', 'WiFi', 'BLE', 'Sensor']
-
-  public static contents: ReactNode[] = [
-    <ContentBase content={<Dashboard/>}/>,
-    <ContentBase content={<div/>}/>,
-    <ContentBase content={<div/>}/>,
-    <ContentBase content={<div/>}/>
-  ]
+  private contents: ReactNode[] = []
+  public lastSensorValue: {temperature: number, humidity: number, pressure: number} = {
+    temperature: 0, 
+    humidity: 0, 
+    pressure: 0
+  }
 
   public render(): ReactNode{
     return (
       <div>
         <ContentSelector parent={this} />
-        <ContentArea contents={Application.contents} contentIndex={this.state.contentIndex} />
+        <ContentArea contents={this.contents} contentIndex={this.state.contentIndex} />
       </div>
     )
   }

@@ -6,8 +6,11 @@ import Pressure from "../svg/pressure.svg"
 import { StyleTemplates } from "../styles";
 import { ipcRenderer } from "electron";
 import { SensorInfos } from "../../sensorInfo";
+import { Application } from "./application";
 
-interface DashboardProps{}
+interface DashboardProps{
+  parent: Application
+}
 interface DashboardStates{
   temperature?: number
   humidity?: number
@@ -18,14 +21,19 @@ export class Dashboard extends Component<DashboardProps, DashboardStates>{
   constructor(props: DashboardProps){
     super(props)
     this.state = {
-      temperature: undefined,
-      humidity: undefined,
-      pressure: undefined
+      temperature: this.props.parent.lastSensorValue.temperature,
+      humidity: this.props.parent.lastSensorValue.humidity,
+      pressure: this.props.parent.lastSensorValue.pressure
     }
 
     const component: Dashboard = this
 
     ipcRenderer.on('updateSensorInfos', (ev: Electron.IpcRendererEvent, data: {data: {sensorInfos: SensorInfos}}) => {
+      this.props.parent.lastSensorValue = {
+        temperature: data.data.sensorInfos.rawTemp,
+        humidity: data.data.sensorInfos.humidity,
+        pressure: parseFloat((data.data.sensorInfos.pressure / 100).toFixed(2))
+      }
       component.setState({
         temperature: data.data.sensorInfos.rawTemp,
         humidity: data.data.sensorInfos.humidity,
