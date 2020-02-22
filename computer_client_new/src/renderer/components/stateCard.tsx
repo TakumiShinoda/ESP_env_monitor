@@ -16,7 +16,7 @@ export class StateCard extends Component<StateCardProps, StateCardState>{
   private static style: CSSProperties = {
     background: 'gray',
     width: '32.33%',
-    height: '18%',
+    height: '100%',
     padding: '1.5%',
     paddingTop: '2%',
     borderRadius: '5px'
@@ -39,7 +39,7 @@ export class StateCard extends Component<StateCardProps, StateCardState>{
     let value: string = this.props.value == undefined ? "No data" : this.props.value.toString()
 
     return (
-      <div style={StateCard.style}>
+      <div className="stateCard" style={StateCard.style}>
         <div style={StateCard.flexStyle}>
           {this.props.icon}
           <div style={{textAlign: 'center', width: '80%'}}> 

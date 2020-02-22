@@ -1,6 +1,7 @@
 import React, { Component, ReactNode, CSSProperties } from "react";
 import { ContentSelectorItem } from "./contentSelectorItem";
 import { Application } from "./application";
+import { StyleTemplates } from "../styles";
 
 export interface ContentSelectorProps{
   parent: Application
@@ -21,7 +22,7 @@ export class ContentSelector extends Component<ContentSelectorProps, ContentSele
     margin: 0,
     display: 'flex',
     listStyle: 'none',
-    color: 'white',
+    color: StyleTemplates.textColor.white.color,
     fontSize: '20px'
   }
 

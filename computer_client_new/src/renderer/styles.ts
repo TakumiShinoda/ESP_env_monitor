@@ -12,10 +12,23 @@ export const Styles: Styles ={
 
 export interface StyleTemplates{
   flex: CSSProperties
+  nospan: CSSProperties
+  textColor: {
+    white: CSSProperties
+  }
 }
 
 export const StyleTemplates: StyleTemplates = { 
   flex: {
     display: 'flex'
+  },
+  nospan: {
+    margin: 0,
+    padding: 0
+  },
+  textColor: {
+    white: {
+      color: 'rgb(200, 200, 200)'
+    }
   }
 }
