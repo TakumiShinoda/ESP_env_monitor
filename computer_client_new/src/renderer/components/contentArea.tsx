@@ -1,4 +1,4 @@
-import React, { ReactNode, Component } from "react";
+import React, { ReactNode, Component, CSSProperties } from "react";
 
 export interface ContentAreaProps{
   contents: ReactNode[]
@@ -13,9 +13,13 @@ export class ContentArea extends Component<ContentAreaProps, ContentAreaStates>{
     this.state = {}
   }
 
+  private static style: CSSProperties = {
+    height: '93%'
+  }
+
   public render(): ReactNode{
     return (
-      <div>
+      <div className="contentArea" style={ContentArea.style}>
         {this.props.contents[this.props.contentIndex]}
       </div>
     )

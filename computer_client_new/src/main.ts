@@ -20,10 +20,12 @@ class ClientApp {
 
   private async create() {
     this.mainWindow = new BrowserWindow({
-      width: 800,
+      width: 820,
       height: 400,
-      minWidth: 500,
-      minHeight: 200,
+      minWidth: 820,
+      minHeight: 400,
+      maxWidth: 820,
+      maxHeight: 400,
       acceptFirstMouse: true,
       webPreferences: { nodeIntegration: true }
     })

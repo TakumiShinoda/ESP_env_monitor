@@ -21,7 +21,7 @@ export class ContentBase extends Component<ContentBaseProps, ContentBaseStates>{
 
   public render(): ReactNode{
     return (
-      <div style={ContentBase.baseStyle}>
+      <div className="contentBase" style={ContentBase.baseStyle}>
         {this.props.content}
       </div>
     )

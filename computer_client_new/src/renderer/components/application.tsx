@@ -1,4 +1,4 @@
-import React, { Component, ReactNode } from "react";
+import React, { Component, ReactNode, CSSProperties } from "react";
 import { ContentSelector } from "./contentSelector";
 import { ContentArea } from "./contentArea";
 import { Dashboard } from "./dashBoard";
@@ -27,16 +27,27 @@ export class Application extends Component<ApplicationProps, ApplicationStates>{
   }
 
   public static menues: string[] = ['DashBoard', 'WiFi', 'BLE', 'Sensor']
-  private contents: ReactNode[] = []
-  public lastSensorValue: {temperature: number, humidity: number, pressure: number} = {
-    temperature: 0, 
-    humidity: 0, 
-    pressure: 0
+  public static style: CSSProperties = {
+    paddingTop: '0.5%',
+    height: '99%'
   }
+
+  public lastSensorValue: SensorInfos = {
+    adjTemp: 0,
+    adjTempAve: 0,
+    cpuTemp: 0,
+    humidity: 0,
+    moment: '',
+    pressure: 0,
+    rawTemp: 0,
+    rawTempAve: 0
+  }
+
+  private contents: ReactNode[] = []
 
   public render(): ReactNode{
     return (
-      <div>
+      <div style={Application.style}>
         <ContentSelector parent={this} />
         <ContentArea contents={this.contents} contentIndex={this.state.contentIndex} />
       </div>

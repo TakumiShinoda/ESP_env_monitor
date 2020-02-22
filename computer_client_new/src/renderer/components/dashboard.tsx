@@ -3,6 +3,7 @@ import { StateCard } from "./stateCard";
 import Thermometer from "../svg/thermometer.svg"
 import Humidity from "../svg/humidity.svg"
 import Pressure from "../svg/pressure.svg"
+import Cpu from "../svg/computer-cpu.svg"
 import { StyleTemplates } from "../styles";
 import { ipcRenderer } from "electron";
 import { SensorInfos } from "../../sensorInfo";
@@ -12,50 +13,47 @@ interface DashboardProps{
   parent: Application
 }
 interface DashboardStates{
-  temperature?: number
-  humidity?: number
-  pressure?: number
+  sensorInfo: SensorInfos
 }
 
 export class Dashboard extends Component<DashboardProps, DashboardStates>{
   constructor(props: DashboardProps){
     super(props)
+
+    const _this: Dashboard = this
     this.state = {
-      temperature: this.props.parent.lastSensorValue.temperature,
-      humidity: this.props.parent.lastSensorValue.humidity,
-      pressure: this.props.parent.lastSensorValue.pressure
+      sensorInfo: this.props.parent.lastSensorValue
     }
 
-    const component: Dashboard = this
-
     ipcRenderer.on('updateSensorInfos', (ev: Electron.IpcRendererEvent, data: {data: {sensorInfos: SensorInfos}}) => {
-      this.props.parent.lastSensorValue = {
-        temperature: data.data.sensorInfos.rawTemp,
-        humidity: data.data.sensorInfos.humidity,
-        pressure: parseFloat((data.data.sensorInfos.pressure / 100).toFixed(2))
-      }
-      component.setState({
-        temperature: data.data.sensorInfos.rawTemp,
-        humidity: data.data.sensorInfos.humidity,
-        pressure: parseFloat((data.data.sensorInfos.pressure / 100).toFixed(2))
-      })
+      _this.props.parent.lastSensorValue = data.data.sensorInfos
+      _this.setState({ sensorInfo: data.data.sensorInfos })
     }) 
   }
 
   private static style: CSSProperties = {
-    padding: '20px',
-    width: '100%',
-    height: '100%'
+    width: '96%',
+    height: '95%',
+    paddingLeft: '2%',
+    paddingTop: '2%'
+  }
+
+  private static stateCardGap: CSSProperties = {
+    width: '1%'
   }
 
   public render(): ReactNode{
     let dashboardStyle: CSSProperties = Object.assign({}, Dashboard.style, StyleTemplates.flex)
 
     return (
-      <div style={dashboardStyle}>
-        <StateCard icon={<Thermometer width="50px" height="50px"/>} title="Temperature" value={this.state.temperature}/>
-        <StateCard icon={<Humidity width="60px" height="50px"/>} title="Humidity" value={this.state.humidity}/>
-        <StateCard icon={<Pressure width="60px" height="50px"/>} title="Pressure" value={this.state.pressure}/>
+      <div className="dashboard" style={dashboardStyle}>
+        <StateCard icon={<Thermometer width="60px" height="50px"/>} title="Temperature" value={this.state.sensorInfo.rawTemp}/>
+        <span style={Dashboard.stateCardGap} />
+        <StateCard icon={<Humidity width="60px" height="50px"/>} title="Humidity" value={this.state.sensorInfo.humidity}/>
+        <span style={Dashboard.stateCardGap} />
+        <StateCard icon={<Pressure width="60px" height="50px"/>} title="Pressure" value={parseFloat((this.state.sensorInfo.pressure / 100).toFixed(2))}/>
+        <span style={Dashboard.stateCardGap} />
+        <StateCard icon={<Cpu width="60px" height="50px"/>} title="CPU Temperature" value={this.state.sensorInfo.cpuTemp} />
       </div>
     )
   }

@@ -16,6 +16,7 @@ export class ContentSelector extends Component<ContentSelectorProps, ContentSele
 
   private static listStyle: CSSProperties = { 
     width: '100%',
+    height: '7%',
     padding: 0,
     margin: 0,
     display: 'flex',

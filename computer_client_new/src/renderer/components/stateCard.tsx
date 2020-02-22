@@ -15,10 +15,10 @@ export class StateCard extends Component<StateCardProps, StateCardState>{
 
   private static style: CSSProperties = {
     background: 'gray',
-    width: '170px',
-    height: '70px',
-    margin: '0 5px',
-    padding: '8px',
+    width: '32.33%',
+    height: '18%',
+    padding: '1.5%',
+    paddingTop: '2%',
     borderRadius: '5px'
   }
 
