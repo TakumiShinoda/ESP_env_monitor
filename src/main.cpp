@@ -21,12 +21,23 @@
 #define COMPILE_LOOP
  
 #define SERIAL_BAUD 115200
-#define TEMP_HISTORY_LENGTH 10
+#define TEMP_HISTORY_LENGTH 400
 #define TEMP_ADJ_RATIO 0.083
 
 #define TIME_BLE_ADV 500 // us
 #define TIME_SLEEP_US 1000000 // ns
 #define TIME_BLE_WAIT_CONNECTING 1000 // us
+
+struct FullInfo{
+  float temperature = 0.0f;
+  float humidity = 0.0f;
+  float pressure = 0.0f;
+  float cpuTemperature = 0.0f; 
+  int8_t hour = 0;
+  int8_t min = 0;
+  int8_t sec = 0;
+  bool wifiState = false;
+};
 
 char WIFI_STATUS_STATEMENT_CONNECTING[] = "true";
 uint8_t WIFI_STATUS_STATEMENT_CONNECTING_LENGTH = 4;
@@ -38,6 +49,7 @@ String WifiApConfigReserved = "hoge";
 String ResultStr = "";
 String ResultDebugStr = "";
 bool deviceConnecting = false;
+std::vector<struct FullInfo> History;
 float TempHistory[TEMP_HISTORY_LENGTH] = {0};
 float EnvBuff[3] = {0};
 float InternalTemp = 0;
@@ -290,6 +302,7 @@ void loop(){
     uint8_t resultUint8Buff[512];
     uint8_t wifiStatusResult[8];
     uint8_t wifiAPConfigUint8_tBuff[1024];
+    struct FullInfo currentInfo;
 
     utils.slideRightBuff(TempHistory, TEMP_HISTORY_LENGTH);
     TempHistory[0] = EnvBuff[0];
@@ -303,14 +316,6 @@ void loop(){
     ResultStr.toCharArray(resultCharBuff, 512);
     utils.charArrToUint8_tArr(resultCharBuff, resultUint8Buff, ResultStr.length());
 
-    if(WiFi.status() == WL_CONNECTED){
-      utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_CONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_CONNECTING_LENGTH);
-      wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_CONNECTING_LENGTH);
-    }else{
-      utils.charArrToUint8_tArr(WIFI_STATUS_STATEMENT_NOTCONNECTING, wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
-      wifiStatusCharacteristic->setValue(wifiStatusResult, WIFI_STATUS_STATEMENT_NOTCONNECTING_LENGTH);
-    }
-
     WifiApConfigReserved.toCharArray(wifiAPConfigCharBuff, 1024);
     utils.charArrToUint8_tArr(wifiAPConfigCharBuff, wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
     getWifiAPConfigCharacteristic->setValue(wifiAPConfigUint8_tBuff, WifiApConfigReserved.length());
@@ -320,19 +325,24 @@ void loop(){
     pCharacteristic->setValue(resultDebugUint8Buff, ResultDebugStr.length());
     pCharacteristic->notify();
 
+    currentInfo.temperature = EnvBuff[0];
+    currentInfo.humidity = EnvBuff[1];
+    currentInfo.pressure = EnvBuff[2];
+    currentInfo.cpuTemperature = InternalTemp;
+
     uint8_t hour = 0;
     uint8_t min = 0;
     uint8_t sec = 0;
     double tempInt;
-    double tempDecimal = modf(EnvBuff[0], &tempInt);
+    double tempDecimal = modf(currentInfo.temperature, &tempInt);
     double tempCPUInt;
     double tempCPUDecimal = modf(InternalTemp, &tempCPUInt);
     double humInt;
-    double humDecimal = modf(EnvBuff[1], &humInt); 
+    double humDecimal = modf(currentInfo.humidity, &humInt); 
     double preInt;
-    double preDecimal = modf(EnvBuff[2], &preInt);
+    double preDecimal = modf(currentInfo.pressure, &preInt);
     uint8_t preIntUpper = ((uint32_t)preInt & 0x00ff0000) >> 16;
-    uint8_t preIntMid = ((uint32_t)preInt & 0x0000ff00) >> 8; 
+    uint8_t preIntMid = ((uint32_t)preInt & 0x0000ff00) >> 8;
     uint8_t preIntLower = ((uint32_t)preInt & 0x000000ff);
 
     if(timeNow != nullptr){
@@ -341,9 +351,13 @@ void loop(){
       sec = timeNow->tm_sec;
     }
 
-    manufacturerData += (char)hour;
-    manufacturerData += (char)min;
-    manufacturerData += (char)sec;
+    currentInfo.hour = hour;
+    currentInfo.min = min;
+    currentInfo.sec = sec;
+
+    manufacturerData += (char)currentInfo.hour;
+    manufacturerData += (char)currentInfo.min;
+    manufacturerData += (char)currentInfo.sec;
     manufacturerData += (char)((uint8_t)tempInt);
     manufacturerData += (char)((uint8_t)(tempDecimal * 100));
     manufacturerData += (char)((uint8_t)tempCPUInt);
