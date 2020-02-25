@@ -53,7 +53,7 @@ class ClientApp {
       let ble_proc: ChildProcessWithoutNullStreams
 
       this.timeover(4000, (time_res: any, time_rej: any, timer: any) => {
-        ble_proc = spawn('node', ['./ble_test.js'])
+        ble_proc = spawn('node', ['./src/bleProc/getHistory.js'])
   
         ble_proc.stdout.on('data', (data: any) => {
           clearTimeout(timer);
