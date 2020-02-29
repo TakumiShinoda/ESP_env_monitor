@@ -2,19 +2,16 @@ const noble = require('noble-mac');
 
 const ble = require('./ble');
 const Constant = require('./constant')
+const devPrint = require('./utils').devPrint
 
-const DevMode = false
-
-function devPrint(mes){
-  if(DevMode) console.log(mes)
-}
+devPrint.isDebug = false
 
 noble.on('stateChange', function(state) {
   if (state === 'poweredOn') {
-    devPrint('Power on.');
+    devPrint.print('Power on.');
     noble.startScanning();
   } else {
-    devPrint('Failed');
+    devPrint.print('Failed');
     noble.stopScanning();
   }
 });
@@ -22,7 +19,7 @@ noble.on('stateChange', function(state) {
 noble.on('discover', async (peripheral) => {
   let deviceName = peripheral.advertisement.localName;
 
-  devPrint(deviceName)
+  devPrint.print(deviceName)
   noble.stopScanning()
   
   if(deviceName != Constant.DeviceName){
@@ -32,23 +29,23 @@ noble.on('discover', async (peripheral) => {
 
   try{
     await ble.connect(peripheral) 
-    devPrint('Connected')
+    devPrint.print('Connected')
 
     let services = await ble.findService(peripheral, Constant.ServiceUUIDs)
     let service = null
     for(var i = 0; i < services.length; i++) if(services[i].uuid == Constant.ServiceUUIDs[0].replace(/-/g, '')) service = services[i];
-    devPrint('Got service')
+    devPrint.print('Got service')
 
     let charas = await ble.findCharacteristic(service, Constant.CharacteristicUUIDs)
     let chara = null
     for(var i = 0; i < charas.length; i++) if(charas[i].uuid == Constant.CharacteristicUUIDs[0].replace(/-/g, '')) chara = charas[i];
-    devPrint('Got characteristic')
+    devPrint.print('Got characteristic')
 
     let recvResult = await ble.recvRX(chara)
-    devPrint('Success recvRX')
+    devPrint.print('Success recvRX')
 
     await ble.disconnect(peripheral)
-    devPrint('Disconnected')
+    devPrint.print('Disconnected')
 
     let recvResultStr = recvResult.toString()
     let resultSplit = recvResultStr.split(',');

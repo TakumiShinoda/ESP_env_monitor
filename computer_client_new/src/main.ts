@@ -1,6 +1,8 @@
 import { BrowserWindow, app, App, ipcMain } from 'electron'
 import { spawn, ChildProcess, SpawnOptions, ChildProcessWithoutNullStreams } from 'child_process'
 import Moment from 'moment';
+import { isSensorInfos, isMomentObj } from './dataScheme.tg';
+import { SensorInfos } from './dataScheme';
 
 class ClientApp {
   private mainWindow: BrowserWindow | null = null
@@ -53,11 +55,11 @@ class ClientApp {
       let ble_proc: ChildProcessWithoutNullStreams
 
       this.timeover(4000, (time_res: any, time_rej: any, timer: any) => {
-        ble_proc = spawn('node', ['./src/bleProc/getHistory.js'])
+        ble_proc = spawn('node', ['./src/bleProc/getNowState.js'])
   
         ble_proc.stdout.on('data', (data: any) => {
           clearTimeout(timer);
-          time_res(data);
+          time_res(data)
         });
         ble_proc.stderr.on('data', (err: any) => {
           clearTimeout(timer);
@@ -65,13 +67,14 @@ class ClientApp {
         });
       })
       .then((result: any) => {
-        let resultJson =  JSON.parse(result);
-        let moment = Moment().format('YYYY-MM-DD HH:mm:ss');
+        let resultJson: { sensorInfos: SensorInfos } =  JSON.parse(result);
   
         console.log('resultJson', resultJson)
-        resultJson.sensorInfos.moment = moment;
-        if(this.mainWindow == undefined) return 
-        this.mainWindow.webContents.send('updateSensorInfos', {data: resultJson});
+
+        if(!isSensorInfos(resultJson.sensorInfos)) throw new Error("Data is invalid.")
+        if(this.mainWindow == undefined) return
+
+        this.mainWindow.webContents.send('updateSensorInfos', {data: resultJson}); 
         // tempTounchLabel.label = `${resultJson.sensorInfos.adjTempAve}°C`;
         // humidityTounchLabel.label = `${resultJson.sensorInfos.humidity}%`
         // pressureTouchLabel.label = `${parseInt(resultJson.sensorInfos.pressure) / 100}hPa`

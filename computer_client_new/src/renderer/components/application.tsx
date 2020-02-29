@@ -3,8 +3,8 @@ import { ContentSelector } from "./contentSelector";
 import { ContentArea } from "./contentArea";
 import { Dashboard } from "./dashBoard";
 import { ContentBase } from "./contentBase";
-import { ipcRenderer } from "electron";
-import { SensorInfos } from "../../sensorInfo";
+import { SensorInfos } from "../../dataScheme";
+import { defSensorInfos } from "../../dataScheme.tg"
 
 interface ApplicationProps{}
 interface ApplicationStates{
@@ -32,16 +32,7 @@ export class Application extends Component<ApplicationProps, ApplicationStates>{
     height: '99%'
   }
 
-  public lastSensorValue: SensorInfos = {
-    adjTemp: 0,
-    adjTempAve: 0,
-    cpuTemp: 0,
-    humidity: 0,
-    moment: '',
-    pressure: 0,
-    rawTemp: 0,
-    rawTempAve: 0
-  }
+  public lastSensorValue: SensorInfos = defSensorInfos
 
   private contents: ReactNode[] = []
 
