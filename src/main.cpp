@@ -277,9 +277,8 @@ void setup(){
       Server.openAllServers();
     #endif
     
-    if(!rtc.begin(true, SSID, PASS) == RTC_BEGIN_SUCCESS){
-      Serial.println("RTC init failed.");
-    } 
+    if(!rtc.begin(true, SSID, PASS) == RTC_BEGIN_SUCCESS) Serial.println("RTC init failed.");
+    WiFi.mode(WIFI_OFF);
 
     setupSensors();
     xTaskCreatePinnedToCore(reserveWifiAPConfig, "reserveWifiAPConfig", 9000, NULL, 1, NULL, 0);
