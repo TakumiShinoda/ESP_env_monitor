@@ -8,6 +8,7 @@
 #include <ESP32Time.h>
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 #include "local_property.h"
 #include "parts/Sensors.h"
@@ -21,7 +22,7 @@
 #define COMPILE_LOOP
  
 #define SERIAL_BAUD 115200
-#define TEMP_HISTORY_LENGTH 400
+#define HISTORY_LENGTH 400
 #define TEMP_ADJ_RATIO 0.083
 
 #define TIME_BLE_ADV 500 // us
@@ -50,8 +51,6 @@ String ResultStr = "";
 String ResultDebugStr = "";
 bool deviceConnecting = false;
 std::vector<struct FullInfo> History;
-float TempHistory[TEMP_HISTORY_LENGTH] = {0};
-float EnvBuff[3] = {0};
 float InternalTemp = 0;
 
 BLEServer *pServer;
@@ -101,10 +100,6 @@ class CharacteristicCallbacksCommand: public BLECharacteristicCallbacks{
     Serial.println(espiffs.readFile(WIFI_CONF_DIR));
   }
 };
-
-void homePageCallback(ChainArray params, String *resp, WiFiClient *client){
-  *(resp) = ResultStr;
-}
 
 void waitForBLECommunication(){
   uint16_t count = 0;
@@ -164,7 +159,6 @@ void setup(){
     WiFi.mode(WIFI_OFF);
 
     setupSensors();
-    xTaskCreatePinnedToCore(reserveWifiAPConfig, "reserveWifiAPConfig", 9000, NULL, 1, NULL, 0);
   #endif
 }
 
@@ -173,7 +167,9 @@ void loop(){
     BLEAdvertisementData advData;
     BLEAdvertising *adv = pServer->getAdvertising();
 
-    getBME280Data(EnvBuff);
+    float EnvBuff[3] = {0};
+    bool sensorState = getBME280Data(EnvBuff);
+    bool rtcState = false;
     InternalTemp = temperatureRead();
     struct tm *timeNow = rtc.now();
     std::string manufacturerData = "";
@@ -198,6 +194,14 @@ void loop(){
     uint8_t preIntUpper = ((uint32_t)preInt & 0x00ff0000) >> 16;
     uint8_t preIntMid = ((uint32_t)preInt & 0x0000ff00) >> 8;
     uint8_t preIntLower = ((uint32_t)preInt & 0x000000ff);
+    uint8_t historySizeUpper = ((uint16_t)History.size() & 0xff00) >> 8;
+    uint8_t historySizeLower = (uint16_t)History.size() & 0x00ff;
+
+    History.push_back(currentInfo);
+    while(History.size() > HISTORY_LENGTH){
+      History.erase(History.begin());
+      History.shrink_to_fit();
+    }
 
     if(timeNow != nullptr){
       hour = timeNow->tm_hour;
@@ -222,6 +226,12 @@ void loop(){
     manufacturerData += (char)preIntMid;
     manufacturerData += (char)preIntLower;
     manufacturerData += (char)((uint8_t)(preDecimal * 100));
+    manufacturerData += (char)0;
+    manufacturerData += (char)0;
+    manufacturerData += (char)0;
+    manufacturerData += (char)0;
+    manufacturerData += (char)historySizeUpper;
+    manufacturerData += (char)historySizeLower;
 
     advData.setManufacturerData(manufacturerData);
     adv->setAdvertisementData(advData);

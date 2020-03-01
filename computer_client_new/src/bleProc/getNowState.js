@@ -22,21 +22,7 @@ noble.on('discover', function(peripheral) {
     const pressureInt = (parseFloat(manu[9]) * 0x10000) + (parseFloat(manu[10]) * 0x100) + parseFloat(manu[11])
     const pressureDecimal = parseFloat(manu[12])
     const pressure = pressureInt + (pressureDecimal / 100.0)
-    // const resultJsonString = `{ 
-    //   "moment": {
-    //     "hour": ${hour},
-    //     "min": ${min},
-    //     "sec": ${sec}
-    //   },
-    //   "sensorInfos": {
-    //     "Temperature": ${tempRaw},
-    //     "cpuTemperature": ${tempCPU},
-    //     "humidity": ${humid},
-    //     "pressure": ${pressure}
-    //   },
-    //   "wifiInfos": {
-    //   }
-    // }`
+    const historyAmount = (parseFloat(manu[17]) * 0x100) + parseFloat(manu[18])
 
     const resultJsonString = `{
       "sensorInfos": {
@@ -50,10 +36,12 @@ noble.on('discover', function(peripheral) {
           "sec": ${sec}
         }
       },
-      "wifiInfos": {
+      "status": {
+        historyAmount: ${historyAmount}
       }
     }`
 
+    console.log(manu[17])
     console.log(resultJsonString)
     process.exit(0);
   }
